@@ -83,6 +83,28 @@
             margin-right:15px;
         }
 
+        /* SOLDE CARD */
+        .solde-card {
+            background:white;
+            padding:20px;
+            border-radius:10px;
+            box-shadow:0 0 15px rgba(0,0,0,0.1);
+            text-align:center;
+            font-size:18px;
+            margin-bottom:20px;
+        }
+
+        .solde-card h2 {
+            margin:0;
+        }
+
+        .solde-number {
+            font-size:26px;
+            margin-top:8px;
+            color:#2c3e50;
+            font-weight:bold;
+        }
+
         .container {
             background: white;
             padding: 30px;
@@ -159,6 +181,12 @@
             <h1>Demande de Congé</h1>
         </header>
 
+        <!-- SOLDE DE CONGÉS -->
+        <div class="solde-card">
+            <h2>Solde de Congés</h2>
+            <div class="solde-number" id="soldeDisplay">0 jours</div>
+        </div>
+
         <div class="container">
 
             <label>Nom complet</label>
@@ -212,15 +240,46 @@
     document.getElementById("departement").value = user.departement;
     document.getElementById("specialite").value = user.specialite;
 
+    /* SOLDE SYSTEM */
+    let solde = localStorage.getItem("solde_" + user.cin);
+    if (!solde) {
+        solde = 29;
+        localStorage.setItem("solde_" + user.cin, solde);
+    }
+    document.getElementById("soldeDisplay").textContent = solde + " jours";
+
     /* SEND REQUEST */
     document.getElementById("sendBtn").addEventListener("click", () => {
-
         const dateDebut = document.getElementById("dateDebut").value;
         const dateFin = document.getElementById("dateFin").value;
 
-        // VALIDATION DATE
-        if (dateFin < dateDebut) {
+        if (!dateDebut || !dateFin) {
+            alert("Veuillez sélectionner les dates.");
+            return;
+        }
+
+        const debut = new Date(dateDebut);
+        const fin = new Date(dateFin);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        // Check debut >= today
+        if (debut < today) {
+            alert("La date de début ne peut pas être dans le passé.");
+            return;
+        }
+
+        // Check debut <= fin
+        if (fin < debut) {
             alert("La date de fin doit être supérieure ou égale à la date de début.");
+            return;
+        }
+
+        // Check duration <= 10 jours
+        const diffTime = Math.abs(fin - debut);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        if (diffDays > 10) {
+            alert("Vous ne pouvez pas prendre plus de 10 jours de congé d'affilée.");
             return;
         }
 
@@ -233,10 +292,11 @@
             dateDebut: dateDebut,
             dateFin: dateFin,
             motif: document.getElementById("motif").value,
+            statut: "en attente",
             dateEnvoi: new Date().toLocaleString()
         };
 
-        if (!demande.typeConge || !demande.dateDebut || !demande.dateFin || !demande.motif) {
+        if (!demande.typeConge || !demande.motif) {
             alert("Veuillez remplir tous les champs.");
             return;
         }
@@ -257,7 +317,6 @@
     const sidebar = document.getElementById("sidebar");
     const main = document.getElementById("main");
     const toggle = document.getElementById("menuToggle");
-
     toggle.addEventListener("click", () => {
         sidebar.classList.toggle("hidden");
         main.classList.toggle("expanded");
