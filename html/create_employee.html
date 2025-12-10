@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Création d'un compte employé</title>
+    <style>
+        body { font-family: Arial; background: #f2f2f2; margin:0; padding:0;}
+        .container { max-width:650px; margin:50px auto; background:#fff; padding:30px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.1);}
+        h2 { text-align:center; margin-bottom:20px; }
+        form label { display:block; margin-top:10px; font-weight:bold; }
+        form input { width:100%; padding:8px; margin-top:5px; border-radius:5px; border:1px solid #ccc; }
+        form button { margin-top:20px; width:100%; padding:10px; background:#4CAF50; color:#fff; font-size:16px; border:none; border-radius:5px; cursor:pointer; }
+        form button:hover { background:#45a049; }
+        .error { color:red; font-size:14px; }
+        .success { color:green; font-size:16px; text-align:center; }
+        #photoPreview { margin-top:10px; max-width:150px; max-height:150px; border-radius:5px; border:1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Créer un compte employé</h2>
+        <form id="employeeForm">
+            <label for="nom">Nom:</label><input type="text" id="nom" required>
+            <label for="prenom">Prénom:</label><input type="text" id="prenom" required>
+            <label for="dateNaiss">Date de naissance:</label><input type="date" id="dateNaiss" required>
+            <label for="dateEmbauche">Date d'embauche:</label><input type="date" id="dateEmbauche" required>
+            <label for="departement">Département:</label><input type="text" id="departement" required>
+            <label for="specialite">Spécialité:</label><input type="text" id="specialite" required>
+            <label for="profilPhoto">Photo de profil:</label><input type="file" id="profilPhoto" accept="image/*">
+            <img id="photoPreview" src="#" alt="Aperçu de la photo" style="display:none;">
+            <label for="telephone">Numéro de téléphone:</label><input type="tel" id="telephone" required pattern="[0-9]{8,15}" placeholder="Ex: 0612345678">
+            <label for="email">Email:</label><input type="email" id="email" required placeholder="exemple@email.com">
+            <label for="password">Mot de passe:</label><input type="password" id="password" required>
+            <label for="cin">CIN:</label><input type="text" id="cin" required>
+            <label for="adresse">Adresse:</label><input type="text" id="adresse" required>
+            <button type="submit">Créer le compte</button>
+        </form>
+        <p id="message"></p>
+    </div>
+
+```
+<script>
+    const employeeForm = document.getElementById('employeeForm');
+    const message = document.getElementById('message');
+    const profilPhoto = document.getElementById('profilPhoto');
+    const photoPreview = document.getElementById('photoPreview');
+
+    // Photo preview
+    profilPhoto.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                photoPreview.src = e.target.result;
+                photoPreview.style.display = "block";
+            }
+            reader.readAsDataURL(file);
+        } else {
+            photoPreview.style.display = "none";
+        }
+    });
+
+    employeeForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const telephone = document.getElementById('telephone').value;
+
+        // Retrieve existing employees from localStorage
+        const employees = JSON.parse(localStorage.getItem('employees')) || [];
+
+        // Email uniqueness check
+        if (employees.some(emp => emp.email === email)) {
+            message.textContent = "Cet email existe déjà !";
+            message.className = "error";
+            return;
+        }
+
+        // Phone number validation
+        const phoneRegex = /^[0-9]{8,15}$/;
+        if (!phoneRegex.test(telephone)) {
+            message.textContent = "Numéro de téléphone invalide !";
+            message.className = "error";
+            return;
+        }
+
+        // Create new employee object
+        const newEmployee = {
+            nom: document.getElementById('nom').value,
+            prenom: document.getElementById('prenom').value,
+            dateNaiss: document.getElementById('dateNaiss').value,
+            dateEmbauche: document.getElementById('dateEmbauche').value,
+            departement: document.getElementById('departement').value,
+            specialite: document.getElementById('specialite').value,
+            telephone: telephone,
+            email: email,
+            password: document.getElementById('password').value,
+            cin: document.getElementById('cin').value,
+            adresse: document.getElementById('adresse').value,
+            photo: photoPreview.src || ""
+        };
+
+        // Save employee to localStorage
+        employees.push(newEmployee);
+        localStorage.setItem('employees', JSON.stringify(employees));
+
+        message.textContent = "Compte employé créé avec succès !";
+        message.className = "success";
+
+        employeeForm.reset();
+        photoPreview.style.display = "none";
+    });
+</script>
+```
+
+</body>
+</html>
