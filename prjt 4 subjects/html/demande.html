@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Demande de Congé</title>
+
+    <style>
+        body {
+            margin:0;
+            font-family: Arial, sans-serif;
+            background:#f2f2f2;
+            display: flex;
+        }
+
+        /* HAMBURGER BUTTON */
+        .menu-btn {
+            font-size: 26px;
+            cursor: pointer;
+            margin-right: 20px;
+            user-select: none;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 250px;
+            background:white;
+            height: 100vh;
+            padding: 20px;
+            box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        /* Hidden sidebar */
+        .sidebar.hidden {
+            transform: translateX(-260px);
+        }
+
+        .sidebar h2 {
+            margin:0 0 20px 0;
+            font-size: 22px;
+        }
+
+        .sidebar a {
+            text-decoration: none;
+            padding: 12px;
+            margin: 5px 0;
+            background: #f5f5f5;
+            border-radius: 6px;
+            display: block;
+            color: #333;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .sidebar a:hover {
+            background: #ddd;
+        }
+
+        /* MAIN CONTENT */
+        .main {
+            margin-left: 270px;
+            padding: 30px;
+            width: calc(100% - 270px);
+            transition: margin-left 0.3s ease;
+        }
+
+        /* When sidebar hidden → content full width */
+        .main.expanded {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        header {
+            display:flex;
+            align-items:center;
+            padding:10px 20px;
+            background:blanchedalmond;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        header img {
+            height:65px;
+            margin-right:15px;
+        }
+
+        /* FORM CONTAINER */
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align:center;
+            margin-bottom:25px;
+        }
+
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+
+        input, select, textarea {
+            width:100%;
+            padding:10px;
+            margin-top:5px;
+            border:1px solid #ccc;
+            border-radius:5px;
+            font-size:14px;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 120px;
+        }
+
+        button {
+            margin-top:20px;
+            width:100%;
+            padding:12px;
+            background:#007bff;
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:16px;
+        }
+
+        button:hover {
+            background:#0056b3;
+        }
+
+        .success {
+            margin-top:15px;
+            color:green;
+            font-weight:bold;
+            text-align:center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+        <h2>Navigation</h2>
+        <a href="home_emp.html">Profil</a>
+        <a href="demande.html">Demande congé</a>
+        <a href="historique_emp.html">Historique</a>
+        <a href="calendrier.html">Calendrier</a>
+        <a href="solde.html">Solde</a>
+    </div>
+
+    <!-- MAIN PAGE -->
+    <div class="main" id="main">
+
+        <header>
+            <span class="menu-btn" id="menuToggle">☰</span>
+            <img src="c:\Users\PC\OneDrive - Ecole Marocaine des Sciences de l'Ingénieur\Bureau\prjt 4 subjects\images\corporate-business-logo-png_seeklogo-386910.png">
+            <h1>Demande de Congé</h1>
+        </header>
+
+        <div class="container">
+
+            <!-- Employee auto-filled info -->
+            <label>Nom complet</label>
+            <input type="text" id="fullName" disabled>
+
+            <label>CIN</label>
+            <input type="text" id="cin" disabled>
+
+            <label>Département</label>
+            <input type="text" id="departement" disabled>
+
+            <label>Spécialité</label>
+            <input type="text" id="specialite" disabled>
+
+            <hr style="margin:20px 0">
+
+            <!-- Leave request form -->
+            <label>Type de congé</label>
+            <select id="typeConge">
+                <option value="">-- Sélectionner --</option>
+                <option>Congé annuel</option>
+                <option>Congé maladie</option>
+                <option>Congé exceptionnel</option>
+                <option>Congé maternité/paternité</option>
+                <option>Autre</option>
+            </select>
+
+            <label>Date de début</label>
+            <input type="date" id="dateDebut">
+
+            <label>Date de fin</label>
+            <input type="date" id="dateFin">
+
+            <label>Motif / Explication</label>
+            <textarea id="motif" placeholder="Décrivez la raison de votre demande..."></textarea>
+
+            <button id="sendBtn">Envoyer la demande</button>
+
+            <p class="success" id="successMsg" style="display:none;">
+                Votre demande a été envoyée !
+            </p>
+        </div>
+    </div>
+
+<script>
+    /* LOAD USER DATA */
+    const user = JSON.parse(localStorage.getItem('loggedInUser'));
+    if (!user) window.location.href = "login_emp.html";
+
+    document.getElementById("fullName").value = user.nom + " " + user.prenom;
+    document.getElementById("cin").value = user.cin;
+    document.getElementById("departement").value = user.departement;
+    document.getElementById("specialite").value = user.specialite;
+
+    /* SEND REQUEST */
+    document.getElementById("sendBtn").addEventListener("click", () => {
+        const demande = {
+            fullName: user.nom + " " + user.prenom,
+            cin: user.cin,
+            departement: user.departement,
+            specialite: user.specialite,
+            typeConge: document.getElementById("typeConge").value,
+            dateDebut: document.getElementById("dateDebut").value,
+            dateFin: document.getElementById("dateFin").value,
+            motif: document.getElementById("motif").value,
+            dateEnvoi: new Date().toLocaleString()
+        };
+
+        if (!demande.typeConge || !demande.dateDebut || !demande.dateFin || !demande.motif) {
+            alert("Veuillez remplir tous les champs.");
+            return;
+        }
+
+        let demandes = JSON.parse(localStorage.getItem("demandesConge")) || [];
+        demandes.push(demande);
+        localStorage.setItem("demandesConge", JSON.stringify(demandes));
+
+        document.getElementById("successMsg").style.display = "block";
+
+        document.getElementById("typeConge").value = "";
+        document.getElementById("dateDebut").value = "";
+        document.getElementById("dateFin").value = "";
+        document.getElementById("motif").value = "";
+    });
+
+    /* SIDEBAR TOGGLE */
+    const sidebar = document.getElementById("sidebar");
+    const main = document.getElementById("main");
+    const toggle = document.getElementById("menuToggle");
+
+    toggle.addEventListener("click", () => {
+        sidebar.classList.toggle("hidden");
+        main.classList.toggle("expanded");
+    });
+</script>
+
+</body>
+</html>
+ 
