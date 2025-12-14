@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Statistiques</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: "Segoe UI", Tahoma, sans-serif; }
+    body { margin: 0; background: #f4f6f9; display: flex; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px; background: #fff; height: 100vh; padding: 25px 20px;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+      position: fixed; left: 0; top: 0;
+      transition: transform .3s ease;
+    }
+    .sidebar.hidden { transform: translateX(-270px); }
+    .sidebar h2 { margin-bottom: 26px; color: #2e7d32; font-size: 22px; }
+    .sidebar a {
+      text-decoration: none; padding: 12px 15px; margin-bottom: 10px;
+      background: #f5f5f5; border-radius: 8px; display: block;
+      color: #333; font-weight: 600; transition: .25s;
+    }
+    .sidebar a:hover { background: #4CAF50; color: #fff; }
+
+    /* MAIN */
+    .main {
+      margin-left: 280px; padding: 30px; width: calc(100% - 280px);
+      transition: margin-left .3s ease;
+    }
+    .main.expanded { margin-left: 0; width: 100%; }
+
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #fff; padding: 18px 25px; border-radius: 14px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); margin-bottom: 18px;
+    }
+    .leftHead { display: flex; align-items: center; gap: 14px; }
+    .menu-btn { font-size: 26px; cursor: pointer; user-select: none; }
+    header img { height: 45px; }
+    header h1 { margin: 0; font-size: 22px; color: #333; }
+
+    /* CHART */
+    .chart-container {
+      background: #fff; border-radius: 18px; padding: 18px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+      margin-bottom: 20px;
+    }
+
+    canvas { width: 100%; height: 400px; }
+  </style>
+
+  <!-- CHART.JS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin_home.html">Dashboard</a>
+    <a href="admin_demandes.html">Demandes de congé</a>
+    <a href="admin_calendar.html">Calendrier</a>
+    <a href="admin_employees.html">Employés</a>
+    <a href="admin_leave_types.html">Types de congés</a>
+    <a href="admin_soldes.html">Soldes</a>
+    <a href="admin_stats.html">Statistiques</a>
+    <a href="admin_reports.html">Rapports / Export</a>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+    <header>
+      <div class="leftHead">
+        <span class="menu-btn" id="menuToggle">☰</span>
+        <h1>Statistiques des Congés</h1>
+      </div>
+    </header>
+
+    <!-- LEAVE STATS CHARTS -->
+    <div class="chart-container">
+      <h3>Nombre de congés par mois</h3>
+      <canvas id="leavePerMonth"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h3>Nombre de congés par département</h3>
+      <canvas id="leavePerDepartment"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h3>Nombre de congés par type</h3>
+      <canvas id="leavePerType"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h3>Taux d'acceptation / refus</h3>
+      <canvas id="acceptanceRate"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Get data from localStorage
+    const demandesConge = JSON.parse(localStorage.getItem("demandesConge")) || [];
+
+    // Prepare statistics data
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const departments = [...new Set(demandesConge.map(d => d.departement))];
+    const leaveTypes = [...new Set(demandesConge.map(d => d.typeConge))];
+
+    const leavePerMonth = Array(12).fill(0);
+    const leavePerDepartment = departments.reduce((acc, dept) => { acc[dept] = 0; return acc; }, {});
+    const leavePerType = leaveTypes.reduce((acc, type) => { acc[type] = 0; return acc; }, {});
+
+    const accepted = demandesConge.filter(d => d.statut === "Approuvée").length;
+    const refused = demandesConge.filter(d => d.statut === "Refusée").length;
+    const total = demandesConge.length;
+
+    demandesConge.forEach(d => {
+      const month = new Date(d.dateDebut).getMonth();
+      leavePerMonth[month]++;
+      leavePerDepartment[d.departement] = (leavePerDepartment[d.departement] || 0) + 1;
+      leavePerType[d.typeConge] = (leavePerType[d.typeConge] || 0) + 1;
+    });
+
+    // Chart.js Data and Configuration
+    const ctx1 = document.getElementById('leavePerMonth').getContext('2d');
+    const leavePerMonthChart = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: months,
+        datasets: [{
+          label: 'Nombre de congés',
+          data: leavePerMonth,
+          backgroundColor: '#4CAF50',
+          borderColor: '#388E3C',
+          borderWidth: 1
+        }]
+      }
+    });
+
+    const ctx2 = document.getElementById('leavePerDepartment').getContext('2d');
+    const leavePerDeptChart = new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: departments,
+        datasets: [{
+          label: 'Nombre de congés',
+          data: departments.map(dept => leavePerDepartment[dept]),
+          backgroundColor: '#FF9800',
+          borderColor: '#F57C00',
+          borderWidth: 1
+        }]
+      }
+    });
+
+    const ctx3 = document.getElementById('leavePerType').getContext('2d');
+    const leavePerTypeChart = new Chart(ctx3, {
+      type: 'pie',
+      data: {
+        labels: leaveTypes,
+        datasets: [{
+          label: 'Nombre de congés',
+          data: leaveTypes.map(type => leavePerType[type]),
+          backgroundColor: ['#F44336', '#2196F3', '#FFC107', '#8BC34A', '#9C27B0'],
+          borderColor: '#fff',
+          borderWidth: 1
+        }]
+      }
+    });
+
+    const ctx4 = document.getElementById('acceptanceRate').getContext('2d');
+    const acceptanceRateChart = new Chart(ctx4, {
+      type: 'doughnut',
+      data: {
+        labels: ['Acceptées', 'Refusées'],
+        datasets: [{
+          label: 'Taux de décision',
+          data: [accepted, refused],
+          backgroundColor: ['#4CAF50', '#F44336'],
+          borderColor: '#fff',
+          borderWidth: 1
+        }]
+      }
+    });
+  </script>
+
+</body>
+</html>

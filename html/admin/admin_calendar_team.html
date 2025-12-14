@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Calendrier</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: "Segoe UI", Tahoma, sans-serif; }
+    body { margin:0; background:#f4f6f9; display:flex; }
+
+    /* SIDEBAR (same as your admin files) */
+    .sidebar{
+      width:260px; background:#fff; height:100vh; padding:25px 20px;
+      box-shadow:2px 0 10px rgba(0,0,0,0.08);
+      position:fixed; left:0; top:0;
+      transition: transform .3s ease;
+    }
+    .sidebar.hidden{ transform: translateX(-270px); }
+    .sidebar h2{ margin-bottom:26px; color:#2e7d32; font-size:22px; }
+    .sidebar a{
+      text-decoration:none; padding:12px 15px; margin-bottom:10px;
+      background:#f5f5f5; border-radius:8px; display:block;
+      color:#333; font-weight:600; transition:.25s;
+    }
+    .sidebar a:hover{ background:#4CAF50; color:#fff; }
+
+    /* MAIN */
+    .main{
+      margin-left:280px; padding:30px; width:calc(100% - 280px);
+      transition: margin-left .3s ease;
+    }
+    .main.expanded{ margin-left:0; width:100%; }
+
+    header{
+      display:flex; align-items:center; justify-content:space-between;
+      background:#fff; padding:18px 25px; border-radius:14px;
+      box-shadow:0 5px 15px rgba(0,0,0,0.08);
+      margin-bottom:18px;
+    }
+    .leftHead{ display:flex; align-items:center; gap:14px; }
+    .menu-btn{ font-size:26px; cursor:pointer; user-select:none; }
+    header img{ height:45px; }
+    header h1{ margin:0; font-size:22px; color:#333; }
+    .meta{ color:#666; font-size:13px; margin-top:2px; }
+
+    .btn{
+      border:none; border-radius:10px; padding:10px 14px;
+      font-weight:700; cursor:pointer; transition:.2s;
+    }
+    .btn.logout{ background:#f44336; color:#fff; }
+    .btn.logout:hover{ background:#d32f2f; }
+    .btn.primary{ background:#4CAF50; color:#fff; }
+    .btn.primary:hover{ background:#43a047; transform: translateY(-1px); }
+    .btn.gray{ background:#eeeeee; color:#333; }
+    .btn.gray:hover{ background:#e0e0e0; }
+
+    /* TOOLBAR */
+    .toolbar{
+      background:#fff; border-radius:16px; padding:14px 16px;
+      box-shadow:0 15px 30px rgba(0,0,0,0.08);
+      display:flex; flex-wrap:wrap; gap:12px;
+      align-items:end; justify-content:space-between;
+      margin-bottom:16px;
+    }
+    .leftTools{
+      display:flex; gap:12px; flex-wrap:wrap; align-items:end;
+    }
+    label{ display:block; font-size:12px; color:#555; font-weight:800; margin-bottom:6px; }
+    select{
+      padding:10px 12px; border-radius:10px; border:1px solid #ccc;
+      font-size:14px; min-width:220px;
+    }
+    select:focus{
+      outline:none; border-color:#4CAF50;
+      box-shadow:0 0 0 3px rgba(76,175,80,0.18);
+      background:#fff;
+    }
+
+    .monthNav{ display:flex; gap:10px; align-items:center; }
+    .monthTitle{ font-weight:900; color:#333; }
+
+    /* KPIs */
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+      margin-bottom:16px;
+    }
+    @media (max-width: 900px){ .kpis{ grid-template-columns:1fr; } }
+    .kpi{
+      background:#fff; border-radius:16px; padding:16px;
+      box-shadow:0 15px 30px rgba(0,0,0,0.08);
+    }
+    .kpi .t{ color:#666; font-weight:800; font-size:12px; }
+    .kpi .n{ margin-top:6px; font-size:24px; font-weight:900; color:#2e7d32; }
+
+    /* CALENDAR */
+    .calendarWrap{
+      background:#fff; border-radius:18px; padding:16px;
+      box-shadow:0 15px 30px rgba(0,0,0,0.08);
+    }
+    .weekdays{
+      display:grid; grid-template-columns: repeat(7, 1fr);
+      gap:8px; margin-bottom:8px;
+      font-weight:900; color:#555; font-size:12px;
+    }
+    .weekday{ padding:10px; border-radius:10px; background:#f5f5f5; text-align:center; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:8px;
+    }
+    .day{
+      background:#fafafa;
+      border:1px solid #eee;
+      border-radius:14px;
+      min-height:96px;
+      padding:10px;
+      cursor:pointer;
+      transition:.15s;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    .day:hover{ transform: translateY(-1px); box-shadow:0 6px 16px rgba(0,0,0,0.06); }
+    .day.muted{ opacity:.55; }
+    .dayTop{ display:flex; justify-content:space-between; align-items:center; }
+    .dateNum{ font-weight:900; color:#333; }
+    .dotCount{
+      font-size:12px; font-weight:900;
+      background:#e8f5e9; color:#1b5e20;
+      border-radius:999px; padding:4px 10px;
+      border:1px solid rgba(27,94,32,0.18);
+    }
+    .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .chip{
+      font-size:11px; font-weight:800;
+      padding:4px 8px; border-radius:999px;
+      background:#fff; border:1px solid #e6e6e6;
+      color:#333;
+      max-width:100%;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+
+    .note{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:#fff3cd; color:#856404;
+      border:1px solid rgba(133,100,4,0.2);
+      font-size:13px;
+    }
+
+    /* Modal */
+    .overlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,0.35);
+      display:none; align-items:center; justify-content:center;
+      padding:18px; z-index:1000;
+    }
+    .modal{
+      width:920px; max-width:100%;
+      background:#fff; border-radius:16px;
+      box-shadow:0 20px 40px rgba(0,0,0,0.25);
+      overflow:hidden;
+    }
+    .modalHead{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px; border-bottom:1px solid #eee;
+    }
+    .modalHead h2{ margin:0; font-size:16px; color:#333; }
+    .closeBtn{
+      border:none; background:#eee; border-radius:10px;
+      padding:8px 10px; cursor:pointer; font-weight:900;
+    }
+    .modalBody{ padding:14px 16px 16px; }
+    table{ width:100%; border-collapse:collapse; margin-top:8px; }
+    th{ background:#f5f5f5; text-align:left; padding:12px; font-size:13px; }
+    td{ padding:12px; border-top:1px solid #eee; font-size:13px; vertical-align:top; }
+    .empty{
+      text-align:center; color:#777; padding:16px;
+      background:#fafafa; border-radius:12px;
+    }
+
+    .badge{
+      display:inline-block; padding:6px 12px; border-radius:999px;
+      font-weight:900; font-size:12px;
+    }
+    .b-approved{ background:#d4edda; color:#155724; }
+    .b-pending{ background:#fff3cd; color:#856404; }
+    .b-refused{ background:#f8d7da; color:#721c24; }
+  </style>
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin_home.html">Dashboard</a>
+    <a href="admin_demandes.html">Demandes de congé</a>
+    <a href="admin_calendar.html">Calendrier</a>
+    <a href="admin_employees.html">Employés</a>
+    <a href="admin_leave_types.html">Types de congés</a>
+    <a href="admin_soldes.html">Soldes</a>
+    <a href="admin_stats.html">Statistiques</a>
+    <a href="admin_reports.html">Rapports / Export</a>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+    <header>
+      <div class="leftHead">
+        <span class="menu-btn" id="menuToggle">☰</span>
+
+        <div>
+          <h1>Calendrier (Équipe / Global)</h1>
+          <div class="meta" id="metaLine">—</div>
+        </div>
+      </div>
+      <button class="btn logout" id="logoutBtn">Se déconnecter</button>
+    </header>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="leftTools">
+
+        <div>
+          <label>Mode</label>
+          <select id="modeSelect">
+            <option value="team">Calendrier équipe</option>
+            <option value="global">Calendrier global</option>
+          </select>
+        </div>
+
+        <div id="depBox">
+          <label>Département (équipe)</label>
+          <select id="depSelect">
+            <option value="all">Tous</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Afficher</label>
+          <select id="showSelect">
+            <option value="approved">Demandes approuvées</option>
+            <option value="approved_pending">Approuvées + en attente</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="monthNav">
+        <button class="btn gray" id="prevBtn">←</button>
+        <div class="monthTitle" id="monthTitle">—</div>
+        <button class="btn gray" id="nextBtn">→</button>
+        <button class="btn primary" id="todayBtn">Aujourd’hui</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi">
+        <div class="t">Demandes affichées (mois)</div>
+        <div class="n" id="kpiMonth">0</div>
+      </div>
+      <div class="kpi">
+        <div class="t">Jours couverts (mois)</div>
+        <div class="n" id="kpiDays">0</div>
+      </div>
+      <div class="kpi">
+        <div class="t">Chevauchements détectés (filtre actuel)</div>
+        <div class="n" id="kpiOverlaps">0</div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="calendarWrap">
+      <div class="weekdays">
+        <div class="weekday">Lun</div><div class="weekday">Mar</div><div class="weekday">Mer</div>
+        <div class="weekday">Jeu</div><div class="weekday">Ven</div><div class="weekday">Sam</div><div class="weekday">Dim</div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="note" id="note">
+        Cliquez sur un jour pour voir la liste des congés (source: <b>demandesConge</b>).
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="modalHead">
+        <h2 id="modalTitle">—</h2>
+        <button class="closeBtn" id="closeModal">✕</button>
+      </div>
+      <div class="modalBody">
+        <div id="modalContent"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---------------- AUTH ----------------
+  const admin = JSON.parse(localStorage.getItem("adminUser"));
+  if (!admin) window.location.href = "admin_login.html";
+
+  document.getElementById("metaLine").textContent =
+    (admin.name ? admin.name : "Admin") + " • " + (admin.email || "");
+
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.removeItem("adminUser");
+    window.location.href = "admin_login.html";
+  };
+
+  // Sidebar toggle
+  const sidebar = document.getElementById("sidebar");
+  const main = document.getElementById("main");
+  document.getElementById("menuToggle").onclick = () => {
+    sidebar.classList.toggle("hidden");
+    main.classList.toggle("expanded");
+  };
+
+  // ---------------- HELPERS ----------------
+  function escapeHTML(str){
+    return String(str ?? "")
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  function normalizeStatus(statut){
+    if (!statut) return "pending";
+    const s = String(statut).toLowerCase().trim();
+    if (s === "pending" || s.includes("attente")) return "pending";
+    if (s === "approved" || s.includes("approuv")) return "approved";
+    if (s === "refused" || s.includes("refus")) return "refused";
+    return "pending";
+  }
+
+  function badgeHTML(st){
+    if (st === "approved") return `<span class="badge b-approved">Approuvée</span>`;
+    if (st === "refused") return `<span class="badge b-refused">Refusée</span>`;
+    return `<span class="badge b-pending">En attente</span>`;
+  }
+
+  function toDateOnly(dateStr){
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function mondayIndex(jsDay){ return (jsDay + 6) % 7; }
+  function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+  function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+  function rangesOverlap(aStart,aEnd,bStart,bEnd){ return aStart <= bEnd && bStart <= aEnd; }
+  function fmtMonthTitle(d){ return d.toLocaleString("fr-FR", { month:"long", year:"numeric" }); }
+
+  function loadRequests(){ return JSON.parse(localStorage.getItem("demandesConge")) || []; }
+  function loadEmployees(){ return JSON.parse(localStorage.getItem("employees")) || []; }
+
+  function computeOverlaps(list){
+    const overlaps = [];
+    for (let i=0;i<list.length;i++){
+      for (let j=i+1;j<list.length;j++){
+        const a=list[i], b=list[j];
+        const depA=(a.departement||"").toLowerCase().trim();
+        const depB=(b.departement||"").toLowerCase().trim();
+        if (depA && depA === depB){
+          const as=toDateOnly(a.dateDebut), ae=toDateOnly(a.dateFin);
+          const bs=toDateOnly(b.dateDebut), be=toDateOnly(b.dateFin);
+          if (as && ae && bs && be && rangesOverlap(as,ae,bs,be)){
+            overlaps.push({a,b});
+          }
+        }
+      }
+    }
+    return overlaps;
+  }
+
+  // ---------------- UI REFS ----------------
+  const modeSelect = document.getElementById("modeSelect");
+  const depBox = document.getElementById("depBox");
+  const depSelect = document.getElementById("depSelect");
+  const showSelect = document.getElementById("showSelect");
+  const grid = document.getElementById("grid");
+  const monthTitle = document.getElementById("monthTitle");
+  const note = document.getElementById("note");
+
+  const kpiMonth = document.getElementById("kpiMonth");
+  const kpiDays = document.getElementById("kpiDays");
+  const kpiOverlaps = document.getElementById("kpiOverlaps");
+
+  // Modal
+  const overlay = document.getElementById("overlay");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalContent = document.getElementById("modalContent");
+  document.getElementById("closeModal").onclick = () => overlay.style.display = "none";
+  overlay.addEventListener("click", (e)=>{ if(e.target===overlay) overlay.style.display="none"; });
+
+  // ---------------- STATE ----------------
+  let viewDate = new Date();
+
+  function fillDepartments(){
+    const deps = new Set();
+    loadEmployees().forEach(e => e.departement && deps.add(e.departement));
+    loadRequests().forEach(r => r.departement && deps.add(r.departement));
+    const sorted = Array.from(deps).sort((a,b)=>a.localeCompare(b,"fr"));
+    depSelect.innerHTML = `<option value="all">Tous</option>` + sorted.map(d =>
+      `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`
+    ).join("");
+  }
+
+  function getFilteredRequestsForMonth(){
+    const mode = modeSelect.value; // team/global
+    const dep = depSelect.value;
+    const show = showSelect.value;
+
+    const mStart = startOfMonth(viewDate);
+    const mEnd = endOfMonth(viewDate);
+
+    const all = loadRequests().map(r => ({ ...r, _status: normalizeStatus(r.statut) }));
+
+    let filtered = all;
+
+    // GLOBAL: approved only
+    if (mode === "global"){
+      filtered = filtered.filter(r => r._status === "approved");
+    } else {
+      // TEAM: depends on showSelect
+      if (show === "approved") filtered = filtered.filter(r => r._status === "approved");
+      if (show === "approved_pending") filtered = filtered.filter(r => (r._status==="approved" || r._status==="pending"));
+      if (dep !== "all") filtered = filtered.filter(r => (r.departement||"") === dep);
+    }
+
+    // overlap with month range
+    filtered = filtered.filter(r => {
+      const s = toDateOnly(r.dateDebut);
+      const e = toDateOnly(r.dateFin);
+      if (!s || !e) return false;
+      return rangesOverlap(s,e,mStart,mEnd);
+    });
+
+    return filtered;
+  }
+
+  function render(){
+    monthTitle.textContent = fmtMonthTitle(viewDate);
+
+    // show/hide dep selector depending on mode
+    const mode = modeSelect.value;
+    depBox.style.display = (mode === "team") ? "block" : "none";
+    showSelect.disabled = (mode === "global");
+    showSelect.style.opacity = (mode === "global") ? ".6" : "1";
+    note.innerHTML = (mode === "global")
+      ? `Vue <b>globale</b> (congés approuvés uniquement). Cliquez sur un jour pour voir les détails.`
+      : `Vue <b>équipe</b> (filtrable par département). Cliquez sur un jour pour voir les détails.`;
+
+    const monthStart = startOfMonth(viewDate);
+    const monthEnd = endOfMonth(viewDate);
+    const firstGridDay = new Date(monthStart);
+    firstGridDay.setDate(monthStart.getDate() - mondayIndex(monthStart.getDay()));
+
+    const days = [];
+    for (let i=0;i<42;i++){
+      const d = new Date(firstGridDay);
+      d.setDate(firstGridDay.getDate()+i);
+      days.push(d);
+    }
+
+    const reqs = getFilteredRequestsForMonth();
+    const overlaps = computeOverlaps(reqs);
+    kpiOverlaps.textContent = overlaps.length;
+
+    const map = new Map(); // YYYY-MM-DD -> requests
+    const keyOf = d => d.toISOString().slice(0,10);
+
+    let covered = 0;
+
+    reqs.forEach(r=>{
+      const s = toDateOnly(r.dateDebut);
+      const e = toDateOnly(r.dateFin);
+      if(!s||!e) return;
+
+      const cur = new Date(s);
+      while(cur <= e){
+        const k = keyOf(cur);
+        if (!map.has(k)) map.set(k, []);
+        map.get(k).push(r);
+
+        if (cur >= monthStart && cur <= monthEnd) covered++;
+        cur.setDate(cur.getDate()+1);
+      }
+    });
+
+    kpiMonth.textContent = reqs.length;
+    kpiDays.textContent = covered;
+
+    grid.innerHTML = days.map(d=>{
+      const k = keyOf(d);
+      const items = map.get(k) || [];
+      const inMonth = d.getMonth() === viewDate.getMonth();
+      const chips = items.slice(0,3).map(it=>{
+        const name = it.fullName || it.cin || "—";
+        return `<span class="chip" title="${escapeHTML(name)}">${escapeHTML(name)}</span>`;
+      }).join("");
+
+      return `
+        <div class="day ${inMonth ? "" : "muted"}" data-date="${k}">
+          <div class="dayTop">
+            <div class="dateNum">${d.getDate()}</div>
+            ${items.length ? `<div class="dotCount">${items.length}</div>` : `<div></div>`}
+          </div>
+          <div class="chips">${chips}${items.length>3 ? `<span class="chip">+${items.length-3}</span>` : ""}</div>
+        </div>
+      `;
+    }).join("");
+
+    document.querySelectorAll(".day").forEach(cell=>{
+      cell.onclick = () => {
+        const dateKey = cell.getAttribute("data-date");
+        const list = map.get(dateKey) || [];
+        const d = new Date(dateKey);
+
+        modalTitle.textContent = d.toLocaleDateString("fr-FR", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+
+        if (!list.length){
+          modalContent.innerHTML = `<div class="empty">Aucun congé ce jour.</div>`;
+        } else {
+          modalContent.innerHTML = `
+            <table>
+              <thead>
+                <tr>
+                  <th>Employé</th>
+                  <th>Département</th>
+                  <th>Type</th>
+                  <th>Période</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${list.map(r=>{
+                  const emp = r.fullName || r.cin || "—";
+                  const dep = r.departement || "—";
+                  const type = r.typeConge || "—";
+                  const per = `${r.dateDebut || "—"} → ${r.dateFin || "—"}`;
+                  return `
+                    <tr>
+                      <td>${escapeHTML(emp)}<div style="color:#777;font-size:12px;">${escapeHTML(r.cin||"")}</div></td>
+                      <td>${escapeHTML(dep)}</td>
+                      <td>${escapeHTML(type)}</td>
+                      <td>${escapeHTML(per)}</td>
+                      <td>${badgeHTML(r._status)}</td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          `;
+        }
+
+        overlay.style.display = "flex";
+      };
+    });
+  }
+
+  // Month nav
+  document.getElementById("prevBtn").onclick = () => { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth()-1, 1); render(); };
+  document.getElementById("nextBtn").onclick = () => { viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth()+1, 1); render(); };
+  document.getElementById("todayBtn").onclick = () => { viewDate = new Date(); render(); };
+
+  // Filters
+  modeSelect.onchange = render;
+  depSelect.onchange = render;
+  showSelect.onchange = render;
+
+  // Boot
+  fillDepartments();
+  render();
+</script>
+
+</body>
+</html>

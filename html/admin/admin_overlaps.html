@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Chevauchements</title>
+  <style>
+    * { box-sizing: border-box; font-family: "Segoe UI", Tahoma, sans-serif; }
+    body { margin:0; background:#f4f6f9; display:flex; }
+
+    .sidebar{
+      width:260px; background:#fff; height:100vh; padding:25px 20px;
+      box-shadow:2px 0 10px rgba(0,0,0,0.08);
+      position:fixed; left:0; top:0; transition:transform .3s ease;
+    }
+    .sidebar.hidden{ transform: translateX(-270px); }
+    .sidebar h2{ margin-bottom:26px; color:#2e7d32; font-size:22px; }
+    .sidebar a{
+      text-decoration:none; padding:12px 15px; margin-bottom:10px;
+      background:#f5f5f5; border-radius:8px; display:block;
+      color:#333; font-weight:600; transition:.25s;
+    }
+    .sidebar a:hover{ background:#4CAF50; color:#fff; }
+
+    .main{
+      margin-left:280px; padding:30px; width:calc(100% - 280px);
+      transition: margin-left .3s ease;
+    }
+    .main.expanded{ margin-left:0; width:100%; }
+
+    header{
+      display:flex; align-items:center; justify-content:space-between;
+      background:#fff; padding:18px 25px; border-radius:14px;
+      box-shadow:0 5px 15px rgba(0,0,0,0.08); margin-bottom:18px;
+    }
+    .leftHead{ display:flex; align-items:center; gap:14px; }
+    .menu-btn{ font-size:26px; cursor:pointer; user-select:none; }
+    header img{ height:45px; }
+    header h1{ margin:0; font-size:22px; color:#333; }
+    .meta{ color:#666; font-size:13px; margin-top:2px; }
+
+    .btn{
+      border:none; border-radius:10px; padding:10px 14px;
+      font-weight:700; cursor:pointer; transition:.2s;
+    }
+    .btn.logout{ background:#f44336; color:#fff; }
+    .btn.logout:hover{ background:#d32f2f; }
+    .btn.gray{ background:#eeeeee; color:#333; }
+    .btn.gray:hover{ background:#e0e0e0; }
+
+    .toolbar{
+      background:#fff; border-radius:16px; padding:14px 16px;
+      box-shadow:0 15px 30px rgba(0,0,0,0.08);
+      display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+      margin-bottom:16px;
+    }
+    label{ font-size:12px; color:#555; font-weight:800; display:block; margin-bottom:6px; }
+    select{
+      padding:10px 12px; border-radius:10px; border:1px solid #ccc; font-size:14px;
+      min-width:240px;
+    }
+    select:focus{
+      outline:none; border-color:#4CAF50;
+      box-shadow:0 0 0 3px rgba(76,175,80,0.18);
+    }
+
+    .section{
+      background:#fff; border-radius:18px; padding:18px;
+      box-shadow:0 15px 30px rgba(0,0,0,0.08);
+    }
+
+    .item{
+      background:#f9f9f9;
+      border:1px solid #eee;
+      border-left:5px solid #ff9800;
+      border-radius:14px;
+      padding:14px;
+      margin-top:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .title{ font-weight:900; color:#333; }
+    .muted{ color:#777; font-size:12px; margin-top:6px; }
+    .right{
+      display:flex; align-items:flex-start; gap:10px;
+    }
+    .chip{
+      font-size:12px; font-weight:900;
+      padding:6px 10px; border-radius:999px;
+      background:#fff3cd; color:#856404;
+      border:1px solid rgba(133,100,4,0.2);
+      white-space:nowrap;
+      height:fit-content;
+    }
+    .empty{
+      text-align:center; color:#777; padding:18px; background:#fafafa; border-radius:12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin_home.html">Dashboard</a>
+    <a href="admin_demandes.html">Demandes de congé</a>
+    <a href="admin_calendar_team.html">Calendrier </a>
+    <a href="admin_overlaps.html">Chevauchements</a>
+    <a href="admin_calendar_global.html">Calendrier global</a>
+    <a href="admin_employees.html">Employés</a>
+    <a href="admin_stats.html">Statistiques</a>
+    <a href="admin_reports.html">Rapports / Export</a>
+  </div>
+
+  <div class="main" id="main">
+    <header>
+      <div class="leftHead">
+        <span class="menu-btn" id="menuToggle">☰</span>
+        <img src="images/logo.png" alt="Logo">
+        <div>
+          <h1>Chevauchements</h1>
+          <div class="meta" id="metaLine">—</div>
+        </div>
+      </div>
+      <button class="btn logout" id="logoutBtn">Se déconnecter</button>
+    </header>
+
+    <div class="toolbar">
+      <div>
+        <label>Département</label>
+        <select id="depSelect">
+          <option value="all">Tous</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Inclure</label>
+        <select id="modeSelect">
+          <option value="approved_pending">Approuvées + en attente</option>
+          <option value="approved">Approuvées uniquement</option>
+        </select>
+      </div>
+
+      <button class="btn gray" id="refreshBtn" type="button">Rafraîchir</button>
+    </div>
+
+    <div class="section">
+      <div style="color:#777;font-size:12px;">
+        Détection: même département + dates qui se chevauchent (source: <b>demandesConge</b>)
+      </div>
+      <div id="list"></div>
+    </div>
+  </div>
+
+<script>
+  // AUTH
+  const admin = JSON.parse(localStorage.getItem("adminUser"));
+  if (!admin) window.location.href = "admin_login.html";
+  document.getElementById("metaLine").textContent =
+    (admin.name ? admin.name : "Admin") + " • " + (admin.email || "");
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.removeItem("adminUser");
+    window.location.href = "admin_login.html";
+  };
+
+  // Sidebar toggle
+  const sidebar = document.getElementById("sidebar");
+  const main = document.getElementById("main");
+  document.getElementById("menuToggle").onclick = () => {
+    sidebar.classList.toggle("hidden");
+    main.classList.toggle("expanded");
+  };
+
+  // Helpers
+  function escapeHTML(str){
+    return String(str ?? "")
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+  function normalizeStatus(statut){
+    if (!statut) return "pending";
+    const s = String(statut).toLowerCase().trim();
+    if (s === "pending" || s.includes("attente")) return "pending";
+    if (s === "approved" || s.includes("approuv")) return "approved";
+    if (s === "refused" || s.includes("refus")) return "refused";
+    return "pending";
+  }
+  function toDateOnly(dateStr){
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  function rangesOverlap(aStart,aEnd,bStart,bEnd){
+    return aStart <= bEnd && bStart <= aEnd;
+  }
+  function loadRequests(){
+    return JSON.parse(localStorage.getItem("demandesConge")) || [];
+  }
+  function loadEmployees(){
+    return JSON.parse(localStorage.getItem("employees")) || [];
+  }
+
+  // UI
+  const depSelect = document.getElementById("depSelect");
+  const modeSelect = document.getElementById("modeSelect");
+  const list = document.getElementById("list");
+
+  function fillDepartments(){
+    const deps = new Set();
+    loadEmployees().forEach(e => e.departement && deps.add(e.departement));
+    loadRequests().forEach(r => r.departement && deps.add(r.departement));
+    const sorted = Array.from(deps).sort((a,b)=>a.localeCompare(b,"fr"));
+    depSelect.innerHTML = `<option value="all">Tous</option>` + sorted.map(d =>
+      `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`
+    ).join("");
+  }
+
+  function computeOverlaps(reqs){
+    const overlaps = [];
+    for (let i=0;i<reqs.length;i++){
+      for (let j=i+1;j<reqs.length;j++){
+        const a=reqs[i], b=reqs[j];
+        const depA=(a.departement||"").toLowerCase().trim();
+        const depB=(b.departement||"").toLowerCase().trim();
+        if (!depA || depA!==depB) continue;
+
+        const as=toDateOnly(a.dateDebut), ae=toDateOnly(a.dateFin);
+        const bs=toDateOnly(b.dateDebut), be=toDateOnly(b.dateFin);
+        if(!as||!ae||!bs||!be) continue;
+
+        if (rangesOverlap(as,ae,bs,be)){
+          overlaps.push({a,b});
+        }
+      }
+    }
+    return overlaps;
+  }
+
+  function render(){
+    const dep = depSelect.value;
+    const mode = modeSelect.value;
+
+    const all = loadRequests().map(r=>({ ...r, _status: normalizeStatus(r.statut) }));
+
+    const filtered = all.filter(r=>{
+      if (dep !== "all" && (r.departement||"") !== dep) return false;
+      if (mode === "approved" && r._status !== "approved") return false;
+      if (mode === "approved_pending" && !(r._status==="approved" || r._status==="pending")) return false;
+      return true;
+    });
+
+    const overlaps = computeOverlaps(filtered);
+
+    if (!overlaps.length){
+      list.innerHTML = `<div class="empty">Aucun chevauchement détecté.</div>`;
+      return;
+    }
+
+    list.innerHTML = overlaps.map((o, idx)=>{
+      const a=o.a, b=o.b;
+      const depName = a.departement || "—";
+      const aName = a.fullName || a.cin || "Employé A";
+      const bName = b.fullName || b.cin || "Employé B";
+      const aRange = `${a.dateDebut || "—"} → ${a.dateFin || "—"}`;
+      const bRange = `${b.dateDebut || "—"} → ${b.dateFin || "—"}`;
+
+      return `
+        <div class="item">
+          <div>
+            <div class="title">#${idx+1} • ${escapeHTML(depName)}</div>
+            <div class="muted">
+              <b>${escapeHTML(aName)}</b> (${escapeHTML(aRange)}) ↔
+              <b>${escapeHTML(bName)}</b> (${escapeHTML(bRange)})
+            </div>
+            <div class="muted">
+              Conseil: vérifier la planification avant d'approuver.
+              (Voir demandes: <a href="admin_demandes.html">admin_demandes.html</a>)
+            </div>
+          </div>
+          <div class="right">
+            <div class="chip">⚠ Chevauchement</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  document.getElementById("refreshBtn").onclick = render;
+  depSelect.onchange = render;
+  modeSelect.onchange = render;
+
+  fillDepartments();
+  render();
+</script>
+
+</body>
+</html>

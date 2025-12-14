@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Rapports / Export</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: "Segoe UI", Tahoma, sans-serif; }
+    body { margin: 0; background: #f4f6f9; display: flex; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px; background: #fff; height: 100vh; padding: 25px 20px;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+      position: fixed; left: 0; top: 0;
+      transition: transform .3s ease;
+    }
+    .sidebar.hidden { transform: translateX(-270px); }
+    .sidebar h2 { margin-bottom: 26px; color: #2e7d32; font-size: 22px; }
+    .sidebar a {
+      text-decoration: none; padding: 12px 15px; margin-bottom: 10px;
+      background: #f5f5f5; border-radius: 8px; display: block;
+      color: #333; font-weight: 600; transition: .25s;
+    }
+    .sidebar a:hover { background: #4CAF50; color: #fff; }
+
+    /* MAIN */
+    .main {
+      margin-left: 280px; padding: 30px; width: calc(100% - 280px);
+      transition: margin-left .3s ease;
+    }
+    .main.expanded { margin-left: 0; width: 100%; }
+
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #fff; padding: 18px 25px; border-radius: 14px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); margin-bottom: 18px;
+    }
+    .leftHead { display: flex; align-items: center; gap: 14px; }
+    .menu-btn { font-size: 26px; cursor: pointer; user-select: none; }
+    header img { height: 45px; }
+    header h1 { margin: 0; font-size: 22px; color: #333; }
+
+    .btn {
+      border: none; border-radius: 10px; padding: 10px 14px;
+      font-weight: 700; cursor: pointer; transition: .2s;
+    }
+    .btn.primary { background: #4CAF50; color: #fff; }
+    .btn.primary:hover { background: #43a047; }
+    .btn.gray { background: #eee; }
+  </style>
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin_home.html">Dashboard</a>
+    <a href="admin_demandes.html">Demandes de congé</a>
+    <a href="admin_calendar.html">Calendrier</a>
+    <a href="admin_employees.html">Employés</a>
+    <a href="admin_leave_types.html">Types de congés</a>
+    <a href="admin_soldes.html">Soldes</a>
+    <a href="admin_stats.html">Statistiques</a>
+    <a href="admin_reports.html">Rapports / Export</a>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+    <header>
+      <div class="leftHead">
+        <span class="menu-btn" id="menuToggle">☰</span>
+        <h1>Export / Rapport</h1>
+      </div>
+    </header>
+
+    <!-- EXPORT OPTIONS -->
+    <div class="section">
+      <h3>Exporter les données</h3>
+
+      <button class="btn primary" onclick="exportToCSV()">Exporter demandes (CSV)</button>
+      <button class="btn primary" onclick="exportEmployeesCSV()">Exporter employés (CSV)</button>
+      <button class="btn primary" onclick="generatePDFReport()">Générer rapport mensuel (PDF)</button>
+    </div>
+  </div>
+
+  <script>
+    function exportToCSV() {
+      const demandesConge = JSON.parse(localStorage.getItem("demandesConge")) || [];
+      const csv = ["Nom,Département,Type de congé,Date début,Date fin,Statut"].concat(demandesConge.map(d => {
+        return `${d.fullName},${d.departement},${d.typeConge},${d.dateDebut},${d.dateFin},${d.statut}`;
+      })).join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "demandes_conge.csv";
+      link.click();
+    }
+
+    function exportEmployeesCSV() {
+      const employees = JSON.parse(localStorage.getItem("employees")) || [];
+      const csv = ["Nom,Prénom,CIN,Email,Départment"].concat(employees.map(e => {
+        return `${e.nom},${e.prenom},${e.cin},${e.email},${e.departement}`;
+      })).join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "employees.csv";
+      link.click();
+    }
+
+    function generatePDFReport() {
+      window.print();
+    }
+  </script>
+
+</body>
+</html>

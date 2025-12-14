@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Types de congé</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: "Segoe UI", Tahoma, sans-serif; }
+    body { margin: 0; background: #f4f6f9; display: flex; }
+
+    /* SIDEBAR (same as your admin files) */
+    .sidebar {
+      width: 260px; background: #fff; height: 100vh; padding: 25px 20px;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+      position: fixed; left: 0; top: 0;
+      transition: transform .3s ease;
+    }
+    .sidebar.hidden { transform: translateX(-270px); }
+    .sidebar h2 { margin-bottom: 26px; color: #2e7d32; font-size: 22px; }
+    .sidebar a {
+      text-decoration: none; padding: 12px 15px; margin-bottom: 10px;
+      background: #f5f5f5; border-radius: 8px; display: block;
+      color: #333; font-weight: 600; transition: .25s;
+    }
+    .sidebar a:hover { background: #4CAF50; color: #fff; }
+
+    /* MAIN */
+    .main {
+      margin-left: 280px; padding: 30px; width: calc(100% - 280px);
+      transition: margin-left .3s ease;
+    }
+    .main.expanded { margin-left: 0; width: 100%; }
+
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #fff; padding: 18px 25px; border-radius: 14px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); margin-bottom: 18px;
+    }
+    .leftHead { display: flex; align-items: center; gap: 14px; }
+    .menu-btn { font-size: 26px; cursor: pointer; user-select: none; }
+    header img { height: 45px; }
+    header h1 { margin: 0; font-size: 22px; color: #333; }
+
+    /* BUTTONS */
+    .btn {
+      border: none; border-radius: 10px; padding: 10px 14px;
+      font-weight: 700; cursor: pointer; transition: .2s;
+    }
+    .btn.primary { background: #4CAF50; color: #fff; }
+    .btn.primary:hover { background: #43a047; }
+    .btn.danger { background: #f44336; color: #fff; }
+    .btn.danger:hover { background: #d32f2f; }
+
+    /* FORM & TABLE */
+    .filters {
+      background: #fff; border-radius: 16px; padding: 16px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+      display: flex; justify-content: space-between; gap: 12px; margin-bottom: 16px;
+    }
+    input, select {
+      padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 14px;
+    }
+
+    .section {
+      background: #fff; border-radius: 18px; padding: 18px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f5f5f5; padding: 12px; font-size: 13px; }
+    td { padding: 12px; border-top: 1px solid #eee; font-size: 13px; }
+
+    .empty { text-align: center; color: #777; padding: 20px; }
+
+    .actions { display: flex; gap: 8px; }
+  </style>
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin_home.html">Dashboard</a>
+    <a href="admin_demandes.html">Demandes de congé</a>
+    <a href="admin_calendar.html">Calendrier</a>
+    <a href="admin_employees.html">Employés</a>
+    <a href="admin_leave_types.html">Types de congés</a>
+    <a href="admin_soldes.html">Soldes</a>
+    <a href="admin_stats.html">Statistiques</a>
+    <a href="admin_reports.html">Rapports / Export</a>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+
+    <header>
+      <div class="leftHead">
+        <span class="menu-btn" id="menuToggle">☰</span>
+        <h1>Gestion des Types de Congés</h1>
+      </div>
+      <button class="btn primary" onclick="showAddTypeForm()">+ Ajouter Type de Congé</button>
+    </header>
+
+    <!-- FILTERS -->
+    <div class="filters">
+      <input id="searchInput" placeholder="Rechercher par nom">
+    </div>
+
+    <!-- TABLE -->
+    <div class="section">
+      <table>
+        <thead>
+          <tr>
+            <th>Nom du Type de Congé</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="leaveTypesTable">
+          <tr><td colspan="2" class="empty">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL for Adding and Editing -->
+  <div id="addTypeModal" style="display:none; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+    <h3>Ajouter un Type de Congé</h3>
+    <input type="text" id="typeName" placeholder="Nom du Type de Congé" style="width:100%; padding: 10px; border-radius: 5px;">
+    <button class="btn primary" onclick="addType()">Ajouter</button>
+    <button class="btn gray" onclick="closeModal()">Annuler</button>
+  </div>
+
+  <script>
+    /* AUTH */
+    const admin = JSON.parse(localStorage.getItem("adminUser"));
+    if (!admin) window.location.href = "admin_login.html";
+
+    /* SIDEBAR */
+    document.getElementById("menuToggle").onclick = () => {
+      sidebar.classList.toggle("hidden");
+      main.classList.toggle("expanded");
+    };
+
+    let leaveTypes = JSON.parse(localStorage.getItem("leaveTypes")) || [];
+
+    /* RENDERING */
+    function renderTable() {
+      const tableBody = document.getElementById("leaveTypesTable");
+      tableBody.innerHTML = leaveTypes.length === 0 ?
+        `<tr><td colspan="2" class="empty">Aucun type de congé trouvé</td></tr>` :
+        leaveTypes.map((type, index) => `
+          <tr>
+            <td>${type.name}</td>
+            <td class="actions">
+              <button class="btn gray" onclick="editType(${index})">Éditer</button>
+              <button class="btn danger" onclick="deleteType(${index})">Supprimer</button>
+            </td>
+          </tr>
+        `).join("");
+    }
+
+    /* ADD TYPE */
+    function showAddTypeForm() {
+      document.getElementById("addTypeModal").style.display = "block";
+    }
+
+    function closeModal() {
+      document.getElementById("addTypeModal").style.display = "none";
+    }
+
+    function addType() {
+      const typeName = document.getElementById("typeName").value;
+      if (typeName.trim() === "") {
+        alert("Le nom du type de congé est requis");
+        return;
+      }
+
+      leaveTypes.push({ name: typeName });
+      localStorage.setItem("leaveTypes", JSON.stringify(leaveTypes));
+      renderTable();
+      closeModal();
+    }
+
+    /* EDIT TYPE */
+    function editType(index) {
+      const newTypeName = prompt("Modifier le nom du type de congé", leaveTypes[index].name);
+      if (newTypeName && newTypeName.trim() !== "") {
+        leaveTypes[index].name = newTypeName;
+        localStorage.setItem("leaveTypes", JSON.stringify(leaveTypes));
+        renderTable();
+      }
+    }
+
+    /* DELETE TYPE */
+    function deleteType(index) {
+      if (confirm("Supprimer ce type de congé ?")) {
+        leaveTypes.splice(index, 1);
+        localStorage.setItem("leaveTypes", JSON.stringify(leaveTypes));
+        renderTable();
+      }
+    }
+
+    /* SEARCH FILTER */
+    document.getElementById("searchInput").oninput = function () {
+      const searchValue = this.value.toLowerCase();
+      const filteredTypes = leaveTypes.filter(type => type.name.toLowerCase().includes(searchValue));
+      renderFilteredTable(filteredTypes);
+    }
+
+    function renderFilteredTable(filteredTypes) {
+      const tableBody = document.getElementById("leaveTypesTable");
+      tableBody.innerHTML = filteredTypes.length === 0 ?
+        `<tr><td colspan="2" class="empty">Aucun type de congé trouvé</td></tr>` :
+        filteredTypes.map((type, index) => `
+          <tr>
+            <td>${type.name}</td>
+            <td class="actions">
+              <button class="btn gray" onclick="editType(${index})">Éditer</button>
+              <button class="btn danger" onclick="deleteType(${index})">Supprimer</button>
+            </td>
+          </tr>
+        `).join("");
+    }
+
+    /* INIT */
+    renderTable();
+  </script>
+</body>
+</html>

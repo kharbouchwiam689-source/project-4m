@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin – Employés</title>
+
+<style>
+*{ box-sizing:border-box; font-family:"Segoe UI",Tahoma,sans-serif; }
+body{ margin:0; background:#f4f6f9; display:flex; }
+
+/* SIDEBAR */
+.sidebar{
+  width:260px; background:#fff; height:100vh; padding:25px 20px;
+  box-shadow:2px 0 10px rgba(0,0,0,0.08);
+  position:fixed; left:0; top:0;
+  transition:transform .3s ease;
+}
+.sidebar.hidden{ transform:translateX(-270px); }
+.sidebar h2{ margin-bottom:26px; color:#2e7d32; font-size:22px; }
+.sidebar a{
+  text-decoration:none; padding:12px 15px; margin-bottom:10px;
+  background:#f5f5f5; border-radius:8px; display:block;
+  color:#333; font-weight:600; transition:.25s;
+}
+.sidebar a:hover{ background:#4CAF50; color:#fff; }
+
+/* MAIN */
+.main{
+  margin-left:280px; padding:30px; width:calc(100% - 280px);
+  transition:margin-left .3s ease;
+}
+.main.expanded{ margin-left:0; width:100%; }
+
+header{
+  display:flex; justify-content:space-between; align-items:center;
+  background:#fff; padding:18px 25px; border-radius:14px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.08);
+  margin-bottom:18px;
+}
+.leftHead{ display:flex; align-items:center; gap:14px; }
+.menu-btn{ font-size:26px; cursor:pointer; user-select:none; }
+header h1{ margin:0; font-size:22px; color:#333; }
+
+.btn{
+  border:none; border-radius:10px; padding:10px 14px;
+  font-weight:700; cursor:pointer;
+}
+.btn.primary{ background:#4CAF50; color:#fff; }
+.btn.primary:hover{ background:#43a047; }
+.btn.danger{ background:#f44336; color:#fff; }
+.btn.danger:hover{ background:#d32f2f; }
+.btn.gray{ background:#eee; }
+
+.filters{
+  background:#fff; border-radius:16px; padding:16px;
+  box-shadow:0 15px 30px rgba(0,0,0,0.08);
+  display:grid; grid-template-columns:2fr 1fr auto;
+  gap:12px; margin-bottom:16px;
+}
+
+input, select{
+  padding:10px 12px; border-radius:10px;
+  border:1px solid #ccc; font-size:14px;
+}
+
+.section{
+  background:#fff; border-radius:18px; padding:18px;
+  box-shadow:0 15px 30px rgba(0,0,0,0.08);
+}
+
+table{ width:100%; border-collapse:collapse; }
+th{ background:#f5f5f5; padding:12px; font-size:13px; }
+td{ padding:12px; border-top:1px solid #eee; font-size:13px; }
+
+.actions{ display:flex; gap:8px; }
+.empty{ text-align:center; color:#777; padding:20px; }
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <h2>Admin Panel</h2>
+  <a href="admin_home.html">Dashboard</a>
+    <a href="admin_demandes.html">Demandes de congé</a>
+    <a href="admin_calendar_team.html">Calendrier</a>
+    <a href="admin_employees.html">Employés</a>
+    <a href="admin_leave_types.html">Types de congés</a>
+    <a href="admin_soldes.html">Soldes</a>
+    <a href="admin_stats.html">Statistiques</a>
+    <a href="admin_reports.html">Rapports / Export</a>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main">
+
+<header>
+  <div class="leftHead">
+    <span class="menu-btn" id="menuToggle">☰</span>
+    <h1>Gestion des employés</h1>
+  </div>
+  <!-- ADD EMPLOYEE BUTTON -->
+  <button class="btn primary" onclick="window.location.href='create_employee.html'">
+    + Ajouter employé
+  </button>
+</header>
+
+<!-- FILTERS -->
+<div class="filters">
+  <input id="searchInput" placeholder="Rechercher (nom, CIN, email)">
+  <select id="depFilter">
+    <option value="all">Tous les départements</option>
+  </select>
+  <button class="btn gray" onclick="resetFilters()">Réinitialiser</button>
+</div>
+
+<!-- TABLE -->
+<div class="section">
+  <table>
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>CIN</th>
+        <th>Email</th>
+        <th>Département</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="empTable"></tbody>
+  </table>
+</div>
+
+</div>
+
+<script>
+/* AUTH */
+const admin = JSON.parse(localStorage.getItem("adminUser"));
+if (!admin) window.location.href = "admin_login.html";
+
+/* SIDEBAR */
+document.getElementById("menuToggle").onclick = () => {
+  sidebar.classList.toggle("hidden");
+  main.classList.toggle("expanded");
+};
+
+let employees = JSON.parse(localStorage.getItem("employees")) || [];
+
+const table = document.getElementById("empTable");
+const depFilter = document.getElementById("depFilter");
+const searchInput = document.getElementById("searchInput");
+
+/* DEPARTMENTS */
+function fillDepartments(){
+  const deps = [...new Set(employees.map(e => e.departement))];
+  deps.forEach(d => {
+    const opt = document.createElement("option");
+    opt.value = d; opt.textContent = d;
+    depFilter.appendChild(opt);
+  });
+}
+
+/* RENDER */
+function render(){
+  const q = searchInput.value.toLowerCase();
+  const dep = depFilter.value;
+
+  let list = employees.filter(e => {
+    const matchSearch =
+      e.nom.toLowerCase().includes(q) ||
+      e.prenom.toLowerCase().includes(q) ||
+      e.cin.toLowerCase().includes(q) ||
+      e.email.toLowerCase().includes(q);
+
+    const matchDep = dep === "all" || e.departement === dep;
+    return matchSearch && matchDep;
+  });
+
+  if (list.length === 0){
+    table.innerHTML = `<tr><td colspan="5" class="empty">Aucun employé trouvé</td></tr>`;
+    return;
+  }
+
+  table.innerHTML = list.map((e, i) => `
+    <tr>
+      <td>${e.nom} ${e.prenom}</td>
+      <td>${e.cin}</td>
+      <td>${e.email}</td>
+      <td>${e.departement}</td>
+      <td class="actions">
+        <button class="btn danger" onclick="deleteEmp(${i})">Supprimer</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function deleteEmp(index){
+  if (!confirm("Supprimer cet employé ?")) return;
+  employees.splice(index,1);
+  localStorage.setItem("employees", JSON.stringify(employees));
+  render();
+}
+
+function resetFilters(){
+  searchInput.value = "";
+  depFilter.value = "all";
+  render();
+}
+
+searchInput.oninput = render;
+depFilter.onchange = render;
+
+/* BOOT */
+fillDepartments();
+render();
+</script>
+
+</body>
+</html>

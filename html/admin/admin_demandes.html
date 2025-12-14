@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Demandes de congé</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: "Segoe UI", Tahoma, sans-serif; }
+    body { margin:0; background:#f4f6f9; display:flex; }
+
+    /* SIDEBAR */
+    .sidebar{
+      width:260px; background:#fff; height:100vh; padding:25px 20px;
+      box-shadow:2px 0 10px rgba(0,0,0,0.08);
+      position:fixed; left:0; top:0;
+      transition: transform .3s ease;
+    }
+    .sidebar.hidden{ transform: translateX(-270px); }
+    .sidebar h2{ margin-bottom:26px; color:#2e7d32; font-size:22px; }
+    .sidebar a{
+      text-decoration:none; padding:12px 15px; margin-bottom:10px;
+      background:#f5f5f5; border-radius:8px; display:block;
+      color:#333; font-weight:600; transition:.25s;
+    }
+    .sidebar a:hover{ background:#4CAF50; color:#fff; }
+
+    /* MAIN */
+    .main{
+      margin-left:280px; padding:30px; width:calc(100% - 280px);
+      transition: margin-left .3s ease;
+    }
+    .main.expanded{ margin-left:0; width:100%; }
+
+    header{
+      display:flex; align-items:center; justify-content:space-between;
+      background:#fff; padding:18px 25px; border-radius:14px;
+      box-shadow:0 5px 15px rgba(0,0,0,0.08); margin-bottom:18px;
+    }
+    .leftHead{ display:flex; align-items:center; gap:14px; }
+    .menu-btn{ font-size:26px; cursor:pointer; user-select:none; }
+    header img{ height:45px; }
+    header h1{ margin:0; font-size:22px; color:#333; }
+    .meta{ color:#666; font-size:13px; margin-top:2px; }
+
+    .btn{
+      border:none; border-radius:10px; padding:10px 14px;
+      font-weight:700; cursor:pointer; transition:.2s;
+    }
+    .btn.logout{ background:#f44336; color:#fff; }
+    .btn.logout:hover{ background:#d32f2f; }
+
+    /* FILTER BAR */
+    .filters{
+      background:#fff; border-radius:16px; padding:16px;
+      box-shadow:0 15px 30px rgba(0,0,0,0.08);
+      display:grid;
+      grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+      gap:12px;
+      align-items:end;
+      margin-bottom:16px;
+    }
+    @media (max-width: 1100px){
+      .filters{ grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 650px){
+      .filters{ grid-template-columns: 1fr; }
+    }
+
+    label{ display:block; font-size:12px; color:#555; font-weight:700; margin-bottom:6px; }
+    input, select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid #ccc;
+      font-size:14px;
+    }
+    input:focus, select:focus{
+      outline:none;
+      border-color:#4CAF50;
+      box-shadow:0 0 0 3px rgba(76,175,80,0.18);
+      background:#fff;
+    }
+
+    .actionsRow{
+      display:flex; gap:10px;
+    }
+    .btn.secondary{
+      background:#eeeeee; color:#333;
+    }
+    .btn.secondary:hover{ background:#e0e0e0; }
+    .btn.primary{
+      background:#4CAF50; color:#fff;
+    }
+    .btn.primary:hover{
+      background:#43a047;
+      transform: translateY(-1px);
+    }
+
+    /* TABLE */
+    .section{
+      background:#fff; border-radius:18px; padding:18px;
+      box-shadow:0 15px 30px rgba(0,0,0,0.08);
+    }
+    table{ width:100%; border-collapse:collapse; margin-top:10px; }
+    th{
+      background:#f5f5f5; text-align:left; padding:12px;
+      font-size:13px;
+    }
+    td{ padding:12px; border-top:1px solid #eee; font-size:13px; vertical-align:top; }
+    tr:hover{ background:#fafafa; }
+
+    .badge{
+      display:inline-block; padding:6px 12px; border-radius:999px;
+      font-weight:800; font-size:12px;
+    }
+    .b-pending{ background:#fff3cd; color:#856404; }
+    .b-approved{ background:#d4edda; color:#155724; }
+    .b-refused{ background:#f8d7da; color:#721c24; }
+
+    .rowBtns{ display:flex; gap:8px; flex-wrap:wrap; }
+    .btn.small{ padding:8px 10px; border-radius:10px; font-size:13px; }
+    .btn.approve{ background:#4CAF50; color:#fff; }
+    .btn.approve:hover{ background:#43a047; }
+    .btn.refuse{ background:#f44336; color:#fff; }
+    .btn.refuse:hover{ background:#d32f2f; }
+    .btn.view{ background:#eeeeee; color:#333; }
+    .btn.view:hover{ background:#e0e0e0; }
+
+    .empty{
+      text-align:center; color:#777; padding:18px; background:#fafafa; border-radius:12px;
+    }
+
+    /* MODAL */
+    .modalOverlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,0.35);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      z-index:1000;
+    }
+    .modal{
+      width: 720px;
+      max-width: 100%;
+      background:#fff;
+      border-radius:16px;
+      box-shadow:0 20px 40px rgba(0,0,0,0.25);
+      padding:18px;
+    }
+    .modalHead{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 10px 14px;
+      border-bottom:1px solid #eee;
+    }
+    .modalHead h2{ margin:0; font-size:18px; color:#333; }
+    .modalClose{
+      border:none; background:#eee; border-radius:10px;
+      padding:8px 10px; cursor:pointer; font-weight:800;
+    }
+    .modalBody{ padding:14px 10px 6px; }
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 700px){ .grid2{ grid-template-columns:1fr; } }
+
+    .field{
+      background:#f9f9f9;
+      border-radius:12px;
+      padding:12px;
+      border:1px solid #eee;
+      font-size:13px;
+    }
+    .field .k{ color:#666; font-weight:800; font-size:12px; }
+    .field .v{ color:#222; margin-top:4px; word-break:break-word; }
+    textarea{
+      width:100%;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #ccc;
+      font-size:14px;
+      min-height:100px;
+      resize: vertical;
+    }
+
+    .warn{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:#fff3cd;
+      color:#856404;
+      border:1px solid rgba(133,100,4,0.2);
+      display:none;
+      font-size:13px;
+    }
+
+    .modalFoot{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      padding:12px 10px 8px;
+      border-top:1px solid #eee;
+    }
+
+    /* tiny helper */
+    .muted{ color:#777; font-size:12px; }
+  </style>
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin_home.html">Dashboard</a>
+    <a href="admin_demandes.html">Demandes de congé</a>
+    <a href="admin_calendar_team.html">Calendrier</a>
+    <a href="admin_employees.html">Employés</a>
+    <a href="admin_leave_types.html">Types de congés</a>
+    <a href="admin_soldes.html">Soldes</a>
+    <a href="admin_stats.html">Statistiques</a>
+    <a href="admin_reports.html">Rapports / Export</a>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+    <header>
+      <div class="leftHead">
+        <span class="menu-btn" id="menuToggle">☰</span>
+        <div>
+          <h1>Demandes de congé</h1>
+          <div class="meta" id="metaLine">—</div>
+        </div>
+      </div>
+      <button class="btn logout" id="logoutBtn">Se déconnecter</button>
+    </header>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div>
+        <label>Recherche (nom / CIN)</label>
+        <input id="q" type="text" placeholder="Ex: Ilham / AB12345">
+      </div>
+
+      <div>
+        <label>Statut</label>
+        <select id="statusFilter">
+          <option value="all">Tous</option>
+          <option value="pending">En attente</option>
+          <option value="approved">Approuvées</option>
+          <option value="refused">Refusées</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Département</label>
+        <select id="depFilter">
+          <option value="all">Tous</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Du</label>
+        <input id="fromDate" type="date">
+      </div>
+
+      <div>
+        <label>Au</label>
+        <input id="toDate" type="date">
+      </div>
+
+      <div class="actionsRow">
+        <button class="btn secondary" id="resetBtn" type="button">Réinitialiser</button>
+        <button class="btn primary" id="applyBtn" type="button">Appliquer</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="section">
+      <div class="muted">Source: localStorage → <b>demandesConge</b> (mêmes données que la partie employé)</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Employé</th>
+            <th>Département</th>
+            <th>Type</th>
+            <th>Période</th>
+            <th>Motif</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="7" class="empty">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modalOverlay" id="overlay">
+    <div class="modal">
+      <div class="modalHead">
+        <h2 id="modalTitle">Détail demande</h2>
+        <button class="modalClose" id="closeModal">✕</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="grid2" id="detailGrid"></div>
+
+        <div class="warn" id="overlapWarn"></div>
+
+        <label style="margin-top:12px; font-weight:800; font-size:13px; color:#333;">Commentaire admin (optionnel)</label>
+        <textarea id="adminComment" placeholder="Ajouter un commentaire visible par l'employé..."></textarea>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btn small view" id="closeBtn2">Fermer</button>
+        <button class="btn small refuse" id="refuseBtn">Refuser</button>
+        <button class="btn small approve" id="approveBtn">Approuver</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---------------- AUTH ----------------
+  const admin = JSON.parse(localStorage.getItem("adminUser"));
+  if (!admin) window.location.href = "admin_login.html";
+
+  document.getElementById("metaLine").textContent =
+    (admin.name ? admin.name : "Admin") + " • " + (admin.email || "");
+
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.removeItem("adminUser");
+    window.location.href = "admin_login.html";
+  };
+
+  // Sidebar toggle
+  const sidebar = document.getElementById("sidebar");
+  const main = document.getElementById("main");
+  document.getElementById("menuToggle").onclick = () => {
+    sidebar.classList.toggle("hidden");
+    main.classList.toggle("expanded");
+  };
+
+  // ---------------- DATA (connected to employee part) ----------------
+  function loadRequests() {
+    return JSON.parse(localStorage.getItem("demandesConge")) || [];
+  }
+
+  function saveRequests(list) {
+    localStorage.setItem("demandesConge", JSON.stringify(list));
+  }
+
+  function loadEmployees() {
+    return JSON.parse(localStorage.getItem("employees")) || [];
+  }
+
+  function loadNotificationsAll() {
+    return JSON.parse(localStorage.getItem("notifications")) || [];
+  }
+
+  function saveNotificationsAll(list) {
+    localStorage.setItem("notifications", JSON.stringify(list));
+  }
+
+  // Normalize statuses to: pending | approved | refused
+  function normalizeStatus(statut) {
+    if (!statut) return "pending";
+    const s = String(statut).toLowerCase().trim();
+    if (s === "pending" || s.includes("attente")) return "pending";
+    if (s === "approved" || s.includes("approuv")) return "approved";
+    if (s === "refused" || s.includes("refus")) return "refused";
+    return "pending";
+  }
+
+  function labelStatus(st) {
+    if (st === "approved") return "Approuvée";
+    if (st === "refused") return "Refusée";
+    return "En attente";
+  }
+
+  function badgeHTML(st) {
+    if (st === "approved") return `<span class="badge b-approved">Approuvée</span>`;
+    if (st === "refused") return `<span class="badge b-refused">Refusée</span>`;
+    return `<span class="badge b-pending">En attente</span>`;
+  }
+
+  function escapeHTML(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function toDateOnly(dateStr) {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+    return aStart <= bEnd && bStart <= aEnd;
+  }
+
+  // Populate departments from employees + requests
+  const depFilter = document.getElementById("depFilter");
+  function fillDepartments() {
+    const employees = loadEmployees();
+    const reqs = loadRequests();
+    const deps = new Set();
+
+    employees.forEach(e => e.departement && deps.add(e.departement));
+    reqs.forEach(r => r.departement && deps.add(r.departement));
+
+    const sorted = Array.from(deps).sort((a,b) => a.localeCompare(b, "fr"));
+    depFilter.innerHTML = `<option value="all">Tous</option>` +
+      sorted.map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join("");
+  }
+
+  // ---------------- RENDER ----------------
+  const tbody = document.getElementById("tbody");
+  const q = document.getElementById("q");
+  const statusFilter = document.getElementById("statusFilter");
+  const fromDate = document.getElementById("fromDate");
+  const toDate = document.getElementById("toDate");
+
+  let currentList = [];      // raw requests
+  let filteredList = [];     // filtered requests
+  let selectedIndex = -1;    // index in filtered list
+  let selectedId = null;     // stable id
+
+  // Ensure each request has an id (stable)
+  function ensureIds(list) {
+    let changed = false;
+    list.forEach(r => {
+      if (!r.id) {
+        r.id = cryptoId();
+        changed = true;
+      }
+    });
+    if (changed) saveRequests(list);
+    return list;
+  }
+
+  function cryptoId() {
+    // Simple unique id (no libs)
+    return "REQ-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9);
+  }
+
+  function applyFilters() {
+    const search = q.value.trim().toLowerCase();
+    const st = statusFilter.value;
+    const dep = depFilter.value;
+    const from = fromDate.value ? toDateOnly(fromDate.value) : null;
+    const to = toDate.value ? toDateOnly(toDate.value) : null;
+
+    const list = currentList.map(r => ({ ...r, _status: normalizeStatus(r.statut) }));
+
+    filteredList = list.filter(r => {
+      const name = String(r.fullName || "").toLowerCase();
+      const cin = String(r.cin || "").toLowerCase();
+      const depR = String(r.departement || "");
+
+      if (search && !(name.includes(search) || cin.includes(search))) return false;
+      if (st !== "all" && r._status !== st) return false;
+      if (dep !== "all" && depR !== dep) return false;
+
+      const start = toDateOnly(r.dateDebut);
+      const end = toDateOnly(r.dateFin);
+      if (from && start && end && end < from) return false;
+      if (to && start && end && start > to) return false;
+
+      return true;
+    });
+
+    renderTable();
+  }
+
+  function renderTable() {
+    if (filteredList.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty">Aucune demande trouvée avec ces filtres.</td></tr>`;
+      return;
+    }
+
+    // Sort: pending first, then by dateEnvoi desc if possible
+    const order = { pending: 0, approved: 1, refused: 2 };
+    const sorted = [...filteredList].sort((a,b) => {
+      const sa = order[a._status] ?? 9;
+      const sb = order[b._status] ?? 9;
+      if (sa !== sb) return sa - sb;
+      return (String(b.dateEnvoi||"")).localeCompare(String(a.dateEnvoi||""));
+    });
+
+    tbody.innerHTML = sorted.map(r => {
+      const emp = r.fullName || (r.cin || "—");
+      const dep = r.departement || "—";
+      const type = r.typeConge || "—";
+      const period = (r.dateDebut && r.dateFin) ? `${r.dateDebut} → ${r.dateFin}` : "—";
+      const motif = r.motif || "—";
+
+      const isLocked = (r._status !== "pending"); // cannot re-decision if already decided
+      const approveDisabled = isLocked ? "disabled" : "";
+      const refuseDisabled = isLocked ? "disabled" : "";
+      const btnStyle = (disabled) => disabled ? 'style="opacity:.55; cursor:not-allowed;"' : "";
+
+      return `
+        <tr>
+          <td>${escapeHTML(emp)}<div class="muted">${escapeHTML(r.cin || "")}</div></td>
+          <td>${escapeHTML(dep)}</td>
+          <td>${escapeHTML(type)}</td>
+          <td>${escapeHTML(period)}</td>
+          <td>${escapeHTML(motif)}</td>
+          <td>${badgeHTML(r._status)}</td>
+          <td>
+            <div class="rowBtns">
+              <button class="btn small view" data-action="view" data-id="${escapeHTML(r.id)}">Détails</button>
+              <button class="btn small approve" data-action="approve" data-id="${escapeHTML(r.id)}" ${approveDisabled} ${btnStyle(isLocked)}>Approuver</button>
+              <button class="btn small refuse" data-action="refuse" data-id="${escapeHTML(r.id)}" ${refuseDisabled} ${btnStyle(isLocked)}>Refuser</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // ---------------- MODAL (detail + comment) ----------------
+  const overlay = document.getElementById("overlay");
+  const closeModal = document.getElementById("closeModal");
+  const closeBtn2 = document.getElementById("closeBtn2");
+  const detailGrid = document.getElementById("detailGrid");
+  const adminComment = document.getElementById("adminComment");
+  const overlapWarn = document.getElementById("overlapWarn");
+  const modalTitle = document.getElementById("modalTitle");
+
+  function openModalById(id) {
+    const list = currentList.map(r => ({ ...r, _status: normalizeStatus(r.statut) }));
+    const idx = list.findIndex(r => r.id === id);
+    if (idx === -1) return;
+
+    const r = list[idx];
+    selectedId = id;
+
+    modalTitle.textContent = `Demande • ${r.fullName || r.cin || ""}`;
+    adminComment.value = r.adminComment || "";
+
+    // Build details grid
+    const fields = [
+      ["Employé", r.fullName || "—"],
+      ["CIN", r.cin || "—"],
+      ["Département", r.departement || "—"],
+      ["Spécialité", r.specialite || "—"],
+      ["Type", r.typeConge || "—"],
+      ["Période", (r.dateDebut && r.dateFin) ? `${r.dateDebut} → ${r.dateFin}` : "—"],
+      ["Date d'envoi", r.dateEnvoi || "—"],
+      ["Statut", labelStatus(r._status)]
+    ];
+
+    detailGrid.innerHTML = fields.map(([k,v]) => `
+      <div class="field"><div class="k">${escapeHTML(k)}</div><div class="v">${escapeHTML(v)}</div></div>
+    `).join("");
+
+    // Check overlaps for this request (same department + overlap)
+    const warnText = getOverlapWarning(r, list);
+    if (warnText) {
+      overlapWarn.textContent = warnText;
+      overlapWarn.style.display = "block";
+    } else {
+      overlapWarn.style.display = "none";
+    }
+
+    // Disable decision buttons if not pending
+    const locked = r._status !== "pending";
+    document.getElementById("approveBtn").disabled = locked;
+    document.getElementById("refuseBtn").disabled = locked;
+    document.getElementById("approveBtn").style.opacity = locked ? ".55" : "1";
+    document.getElementById("refuseBtn").style.opacity = locked ? ".55" : "1";
+
+    overlay.style.display = "flex";
+  }
+
+  function closeModalFn() {
+    overlay.style.display = "none";
+    selectedId = null;
+    adminComment.value = "";
+    overlapWarn.style.display = "none";
+  }
+
+  closeModal.onclick = closeModalFn;
+  closeBtn2.onclick = closeModalFn;
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeModalFn();
+  });
+
+  function getOverlapWarning(req, all) {
+    const reqDep = String(req.departement || "").toLowerCase().trim();
+    if (!reqDep) return "";
+
+    const reqStart = toDateOnly(req.dateDebut);
+    const reqEnd = toDateOnly(req.dateFin);
+    if (!reqStart || !reqEnd) return "";
+
+    // Compare with other approved/pending requests
+    const relevant = all
+      .map(r => ({ ...r, _status: normalizeStatus(r.statut) }))
+      .filter(r => r.id !== req.id)
+      .filter(r => (r._status === "approved" || r._status === "pending"))
+      .filter(r => String(r.departement||"").toLowerCase().trim() === reqDep)
+      .map(r => ({
+        ...r,
+        _start: toDateOnly(r.dateDebut),
+        _end: toDateOnly(r.dateFin)
+      }))
+      .filter(r => r._start && r._end);
+
+    const conflicts = relevant.filter(r => rangesOverlap(reqStart, reqEnd, r._start, r._end));
+    if (conflicts.length === 0) return "";
+
+    const top = conflicts.slice(0, 2).map(c => `${c.fullName || c.cin} (${c.dateDebut} → ${c.dateFin})`).join(" ; ");
+    const more = conflicts.length > 2 ? ` (+${conflicts.length - 2} autres)` : "";
+    return `⚠ Chevauchement détecté dans le département "${req.departement}". Conflits: ${top}${more}`;
+  }
+
+  // ---------------- ACTIONS (approve / refuse) ----------------
+  function pushEmployeeNotification(cin, messageText) {
+    const notifs = loadNotificationsAll();
+    notifs.push({
+      cin,
+      message: messageText,
+      date: new Date().toLocaleString(),
+      read: false
+    });
+    saveNotificationsAll(notifs);
+  }
+
+  function updateRequestStatus(id, newStatus, comment) {
+    const list = loadRequests();
+    const idx = list.findIndex(r => r.id === id);
+    if (idx === -1) return false;
+
+    // Save comment on the request
+    list[idx].adminComment = comment || "";
+
+    // Store normalized status
+    list[idx].statut = newStatus; 
+    
+    list[idx].decisionDate = new Date().toLocaleString();
+
+    saveRequests(list);
+
+    // Notify employee
+    const r = list[idx];
+    const label = (newStatus === "approved") ? "approuvée" : "refusée";
+    let msg = `Votre demande de congé (${r.typeConge || "Congé"}) a été ${label}.`;
+    if (comment && comment.trim()) msg += ` Commentaire: ${comment.trim()}`;
+    pushEmployeeNotification(r.cin, msg);
+
+    return true;
+  }
+
+  // ---------------- EVENTS ----------------
+  document.getElementById("applyBtn").onclick = applyFilters;
+
+  document.getElementById("resetBtn").onclick = () => {
+    q.value = "";
+    statusFilter.value = "all";
+    depFilter.value = "all";
+    fromDate.value = "";
+    toDate.value = "";
+    applyFilters();
+  };
+
+  tbody.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+
+    const action = btn.getAttribute("data-action");
+    const id = btn.getAttribute("data-id");
+    if (!id) return;
+
+    if (action === "view") {
+      openModalById(id);
+    }
+    if (action === "approve") {
+      // quick approve without modal comment
+      if (confirm("Approuver cette demande ?")) {
+        updateRequestStatus(id, "approved", "");
+        boot();
+      }
+    }
+    if (action === "refuse") {
+      if (confirm("Refuser cette demande ?")) {
+        updateRequestStatus(id, "refused", "");
+        boot();
+      }
+    }
+  });
+
+  document.getElementById("approveBtn").onclick = () => {
+    if (!selectedId) return;
+    const comment = adminComment.value;
+    // warn about overlap, but allow if admin decides
+    if (overlapWarn.style.display === "block") {
+      const ok = confirm("Chevauchement détecté. Voulez-vous quand même approuver ?");
+      if (!ok) return;
+    }
+    updateRequestStatus(selectedId, "approved", comment);
+    closeModalFn();
+    boot();
+  };
+
+  document.getElementById("refuseBtn").onclick = () => {
+    if (!selectedId) return;
+    const comment = adminComment.value;
+    updateRequestStatus(selectedId, "refused", comment);
+    closeModalFn();
+    boot();
+  };
+
+  // ---------------- BOOT ----------------
+  function boot() {
+    fillDepartments();
+    currentList = ensureIds(loadRequests());
+
+    // If your old data used French labels (en attente/Approuvée/Refusée),
+    // we keep it readable by normalizing only for UI. We do not destroy old fields.
+    // Requests get an id automatically for stable actions.
+
+    applyFilters();
+  }
+
+  boot();
+</script>
+
+</body>
+</html>
