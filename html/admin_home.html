@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: "Segoe UI", Tahoma, sans-serif; }
+    body { margin:0; background:#f4f6f9; display:flex; }
+
+    /* SIDEBAR */
+    .sidebar{
+      width:260px; background:#fff; height:100vh; padding:25px 20px;
+      box-shadow:2px 0 10px rgba(0,0,0,0.08);
+      position:fixed; left:0; top:0;
+      transition: transform .3s ease;
+    }
+    .sidebar.hidden{ transform: translateX(-270px); }
+    .sidebar h2{ margin-bottom:26px; color:#2e7d32; font-size:22px; }
+    .sidebar a{
+      text-decoration:none; padding:12px 15px; margin-bottom:10px;
+      background:#f5f5f5; border-radius:8px; display:block;
+      color:#333; font-weight:600; transition:.25s;
+    }
+    .sidebar a:hover{ background:#4CAF50; color:#fff; }
+
+    /* MAIN */
+    .main{
+      margin-left:280px; padding:30px; width:calc(100% - 280px);
+      transition: margin-left .3s ease;
+    }
+    .main.expanded{ margin-left:0; width:100%; }
+
+    header{
+      display:flex; align-items:center; justify-content:space-between;
+      background:#fff; padding:18px 25px; border-radius:14px;
+      box-shadow:0 5px 15px rgba(0,0,0,0.08); margin-bottom:22px;
+    }
+    .leftHead{ display:flex; align-items:center; gap:14px; }
+    .menu-btn{ font-size:26px; cursor:pointer; user-select:none; }
+    header img{ height:45px; }
+    header h1{ margin:0; font-size:22px; color:#333; }
+    .adminMeta{ color:#666; font-size:13px; }
+
+    .btn{
+      border:none; border-radius:10px; padding:10px 14px;
+      font-weight:700; cursor:pointer; transition:.2s;
+    }
+    .btn.logout{ background:#f44336; color:#fff; }
+    .btn.logout:hover{ background:#d32f2f; }
+
+    /* GRID */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:16px;
+      margin-bottom:18px;
+    }
+    @media (max-width: 1100px){ .grid{ grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 650px){ .grid{ grid-template-columns: 1fr; } }
+
+    .card{
+      background:#fff; border-radius:16px; padding:18px;
+      box-shadow:0 15px 30px rgba(0,0,0,0.08);
+    }
+    .card .label{ color:#666; font-size:13px; margin-bottom:10px; }
+    .card .value{ font-size:28px; font-weight:800; color:#2e7d32; }
+    .card .sub{ margin-top:8px; font-size:12px; color:#777; }
+
+    /* SECTIONS */
+    .section{
+      background:#fff; border-radius:18px; padding:22px;
+      box-shadow:0 15px 30px rgba(0,0,0,0.08);
+      margin-top:16px;
+    }
+    .sectionHead{
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:14px;
+    }
+    .sectionHead h2{ margin:0; font-size:18px; color:#333; }
+    .link{
+      text-decoration:none; color:#2e7d32; font-weight:700; font-size:13px;
+    }
+
+    /* TABLE */
+    table{ width:100%; border-collapse:collapse; margin-top:10px; }
+    th{
+      background:#f5f5f5; text-align:left; padding:12px;
+      font-size:13px;
+    }
+    td{ padding:12px; border-top:1px solid #eee; font-size:13px; }
+    tr:hover{ background:#fafafa; }
+
+    .badge{
+      display:inline-block; padding:6px 12px; border-radius:999px;
+      font-weight:800; font-size:12px;
+    }
+    .b-pending{ background:#fff3cd; color:#856404; }
+    .b-approved{ background:#d4edda; color:#155724; }
+    .b-refused{ background:#f8d7da; color:#721c24; }
+
+    /* OVERLAPS LIST */
+    .overlapItem{
+      padding:12px 14px; border-radius:12px; background:#f9f9f9;
+      border-left:5px solid #ff9800; margin-bottom:10px;
+      display:flex; justify-content:space-between; gap:12px;
+      font-size:13px;
+    }
+    .overlapItem b{ color:#333; }
+    .muted{ color:#777; }
+    .empty{
+      text-align:center; color:#777; padding:18px; background:#fafafa; border-radius:12px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin_home.html">Dashboard</a>
+    <a href="admin_demandes.html">Demandes de congé</a>
+    <a href="admin_calendar_team.html">Calendrier équipe</a>
+    <a href="admin_employees.html">Employés</a>
+    <a href="admin_leave_types.html">Types de congés</a>
+    <a href="admin_soldes.html">Soldes</a>
+    <a href="admin_stats.html">Statistiques</a>
+    <a href="admin_reports.html">Rapports / Export</a>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+    <header>
+      <div class="leftHead">
+        <span class="menu-btn" id="menuToggle">☰</span>
+        <img src="images/logo.png" alt="Logo">
+        <div>
+          <h1>Dashboard Admin</h1>
+          <div class="adminMeta" id="adminMeta">—</div>
+        </div>
+      </div>
+      <button class="btn logout" id="logoutBtn">Se déconnecter</button>
+    </header>
+
+    <!-- KPIs -->
+    <div class="grid">
+      <div class="card">
+        <div class="label">Employés (comptes)</div>
+        <div class="value" id="kpiEmployees">0</div>
+        <div class="sub">Source: localStorage → <b>employees</b></div>
+      </div>
+
+      <div class="card">
+        <div class="label">Demandes en attente</div>
+        <div class="value" id="kpiPending">0</div>
+        <div class="sub">Source: <b>demandesConge</b></div>
+      </div>
+
+      <div class="card">
+        <div class="label">Demandes approuvées (mois)</div>
+        <div class="value" id="kpiApprovedMonth">0</div>
+        <div class="sub" id="monthLabel">—</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Alertes chevauchement</div>
+        <div class="value" id="kpiOverlaps">0</div>
+        <div class="sub">Même département + dates qui se croisent</div>
+      </div>
+    </div>
+
+    <!-- Recent requests -->
+    <div class="section">
+      <div class="sectionHead">
+        <h2>Dernières demandes</h2>
+        <a class="link" href="admin_demandes.html">Voir tout →</a>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Employé</th>
+            <th>Département</th>
+            <th>Type</th>
+            <th>Période</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="recentBody">
+          <tr><td colspan="5" class="empty">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Overlaps -->
+    <div class="section">
+      <div class="sectionHead">
+        <h2>Chevauchements détectés</h2>
+        <a class="link" href="admin_overlaps.html">Détails →</a>
+      </div>
+      <div id="overlapsBox"></div>
+    </div>
+
+  </div>
+
+<script>
+  // ---- AUTH ----
+  const admin = JSON.parse(localStorage.getItem("adminUser"));
+  if (!admin) window.location.href = "admin_login.html";
+
+  document.getElementById("adminMeta").textContent =
+    (admin.name ? admin.name : "Admin") + " • " + (admin.email || "");
+
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.removeItem("adminUser");
+    window.location.href = "admin_login.html";
+  };
+
+  // Sidebar toggle
+  const sidebar = document.getElementById("sidebar");
+  const main = document.getElementById("main");
+  document.getElementById("menuToggle").onclick = () => {
+    sidebar.classList.toggle("hidden");
+    main.classList.toggle("expanded");
+  };
+
+  // ---- DATA (CONNECTED TO EMPLOYEE PART) ----
+  const employees = JSON.parse(localStorage.getItem("employees")) || [];
+  const demandesRaw = JSON.parse(localStorage.getItem("demandesConge")) || [];
+
+  // Normalize old/new statuses to: pending | approved | refused
+  function normalizeStatus(statut) {
+    if (!statut) return "pending";
+    const s = String(statut).toLowerCase().trim();
+
+    if (s === "pending" || s.includes("attente")) return "pending";
+    if (s === "approved" || s.includes("approuv")) return "approved";
+    if (s === "refused" || s.includes("refus")) return "refused";
+    return "pending";
+  }
+
+  function badgeHTML(status) {
+    if (status === "approved") return `<span class="badge b-approved">Approuvée</span>`;
+    if (status === "refused") return `<span class="badge b-refused">Refusée</span>`;
+    return `<span class="badge b-pending">En attente</span>`;
+  }
+
+  // KPI: employees
+  document.getElementById("kpiEmployees").textContent = employees.length;
+
+  // KPI: pending
+  const demandes = demandesRaw.map(d => ({ ...d, _status: normalizeStatus(d.statut) }));
+  const pendingCount = demandes.filter(d => d._status === "pending").length;
+  document.getElementById("kpiPending").textContent = pendingCount;
+
+  // KPI: approved this month (based on dateEnvoi; if missing, skip)
+  const now = new Date();
+  const monthName = now.toLocaleString("fr-FR", { month: "long", year: "numeric" });
+  document.getElementById("monthLabel").textContent = "Mois: " + monthName;
+
+  function parseDateEnvoi(str) {
+    // Your dateEnvoi is like new Date().toLocaleString()
+    // Parsing is not guaranteed; we fallback to null.
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  const approvedMonth = demandes.filter(d => {
+    if (d._status !== "approved") return false;
+    const de = parseDateEnvoi(d.dateEnvoi);
+    if (!de) return false;
+    return de.getFullYear() === now.getFullYear() && de.getMonth() === now.getMonth();
+  }).length;
+
+  document.getElementById("kpiApprovedMonth").textContent = approvedMonth;
+
+  // Recent requests (last 8 by dateEnvoi if parsable, else keep original order)
+  const demandesSorted = [...demandes].sort((a,b) => {
+    const da = parseDateEnvoi(a.dateEnvoi) || new Date(0);
+    const db = parseDateEnvoi(b.dateEnvoi) || new Date(0);
+    return db - da;
+  }).slice(0, 8);
+
+  const recentBody = document.getElementById("recentBody");
+  if (demandesSorted.length === 0) {
+    recentBody.innerHTML = `<tr><td colspan="5" class="empty">Aucune demande trouvée.</td></tr>`;
+  } else {
+    recentBody.innerHTML = demandesSorted.map(d => {
+      const emp = d.fullName || ((d.nom && d.prenom) ? (d.nom + " " + d.prenom) : (d.cin || "—"));
+      const dep = d.departement || "—";
+      const type = d.typeConge || "—";
+      const period = (d.dateDebut && d.dateFin) ? `${d.dateDebut} → ${d.dateFin}` : "—";
+      return `
+        <tr>
+          <td>${escapeHTML(emp)}</td>
+          <td>${escapeHTML(dep)}</td>
+          <td>${escapeHTML(type)}</td>
+          <td>${escapeHTML(period)}</td>
+          <td>${badgeHTML(d._status)}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // ---- Overlap detection (same department + date overlap) ----
+  function toDateOnly(dateStr) {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+    return aStart <= bEnd && bStart <= aEnd;
+  }
+
+  // Consider approved + pending for alerts (planning)
+  const relevant = demandes
+    .filter(d => d._status === "approved" || d._status === "pending")
+    .map(d => ({
+      ...d,
+      _start: toDateOnly(d.dateDebut),
+      _end: toDateOnly(d.dateFin)
+    }))
+    .filter(d => d._start && d._end);
+
+  const overlaps = [];
+  for (let i=0; i<relevant.length; i++) {
+    for (let j=i+1; j<relevant.length; j++) {
+      const a = relevant[i], b = relevant[j];
+      const depA = (a.departement || "").toLowerCase().trim();
+      const depB = (b.departement || "").toLowerCase().trim();
+      if (!depA || depA !== depB) continue;
+
+      if (rangesOverlap(a._start, a._end, b._start, b._end)) {
+        overlaps.push({
+          departement: a.departement || "—",
+          aName: a.fullName || a.cin || "Employé A",
+          bName: b.fullName || b.cin || "Employé B",
+          aRange: `${a.dateDebut} → ${a.dateFin}`,
+          bRange: `${b.dateDebut} → ${b.dateFin}`,
+        });
+      }
+    }
+  }
+
+  document.getElementById("kpiOverlaps").textContent = overlaps.length;
+
+  const overlapsBox = document.getElementById("overlapsBox");
+  if (overlaps.length === 0) {
+    overlapsBox.innerHTML = `<div class="empty">Aucun chevauchement détecté 🎉</div>`;
+  } else {
+    overlapsBox.innerHTML = overlaps.slice(0, 6).map(o => `
+      <div class="overlapItem">
+        <div>
+          <div><b>${escapeHTML(o.departement)}</b> — chevauchement</div>
+          <div class="muted">
+            ${escapeHTML(o.aName)} (${escapeHTML(o.aRange)}) ↔
+            ${escapeHTML(o.bName)} (${escapeHTML(o.bRange)})
+          </div>
+        </div>
+        <div class="muted">⚠</div>
+      </div>
+    `).join("");
+  }
+
+  // Basic escape to avoid HTML injection from stored data
+  function escapeHTML(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+</script>
+
+</body>
+</html>

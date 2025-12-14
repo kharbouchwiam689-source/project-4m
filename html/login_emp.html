@@ -1,58 +1,181 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Login Employé</title>
+    <title>Connexion Employé</title>
+
     <style>
-        body { font-family: Arial; background:#f2f2f2; display:flex; justify-content:center; align-items:center; height:100vh; }
-        .login-container { background:#fff; padding:30px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.1); width:350px; }
-        h2 { text-align:center; margin-bottom:20px; }
-        label { display:block; margin-top:10px; font-weight:bold; }
-        input { width:100%; padding:8px; margin-top:5px; border-radius:5px; border:1px solid #ccc; }
-        button { margin-top:20px; width:100%; padding:10px; background:#4CAF50; color:#fff; font-size:16px; border:none; border-radius:5px; cursor:pointer; }
-        button:hover { background:#45a049; }
-        .error { color:red; font-size:14px; margin-top:10px; text-align:center; }
+        * {
+            box-sizing: border-box;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(135deg, #4CAF50, #2e7d32);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-card {
+            background: #ffffff;
+            width: 380px;
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-card h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #2e7d32;
+        }
+
+        .login-card p {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 15px;
+            display: block;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            margin-top: 6px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+        }
+
+        button {
+            width: 100%;
+            margin-top: 25px;
+            padding: 12px;
+            background: #4CAF50;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #43a047;
+            transform: translateY(-1px);
+        }
+
+        .error {
+            margin-top: 15px;
+            color: #d32f2f;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 12px;
+            color: #999;
+        }
     </style>
 </head>
+
 <body>
-    <div class="login-container">
+
+    <div class="login-card">
         <h2>Connexion Employé</h2>
+        <p>Accédez à votre espace personnel</p>
+
         <form id="loginForm">
-            <label for="email">Email:</label><input type="email" id="email" required>
-            <label for="password">Mot de passe:</label><input type="password" id="password" required>
+            <label for="email">Adresse email</label>
+            <input type="email" id="email" placeholder="exemple@email.com" required>
+
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" placeholder="••••••••" required>
+
             <button type="submit">Se connecter</button>
         </form>
-        <p id="message"></p>
+
+        <div id="message"></div>
+
+        <div class="footer">
+            Leave Management System © 2025
+        </div>
     </div>
 
-```
 <script>
-    const loginForm = document.getElementById('loginForm');
-    const message = document.getElementById('message');
+    const loginForm = document.getElementById("loginForm");
+    const message = document.getElementById("message");
 
-    loginForm.addEventListener('submit', function(e) {
+    function hashPassword(password) {
+        return btoa(password);
+    }
+
+    loginForm.addEventListener("submit", function(e) {
         e.preventDefault();
 
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
 
-        const employees = JSON.parse(localStorage.getItem('employees')) || [];
-        const user = employees.find(emp => emp.email === email && emp.password === password);
+        let employees = JSON.parse(localStorage.getItem("employees")) || [];
+
+        let user = employees.find(emp => {
+            // Case 1: OLD USERS (plain text)
+            if (emp.email === email && emp.password === password) {
+                // 🔥 upgrade password silently
+                emp.password = hashPassword(password);
+                localStorage.setItem("employees", JSON.stringify(employees));
+                return true;
+            }
+
+            // Case 2: NEW USERS (hashed)
+            if (emp.email === email && emp.password === hashPassword(password)) {
+                return true;
+            }
+
+            return false;
+        });
 
         if (user) {
-            // Store logged-in user info in localStorage (optional)
-            localStorage.setItem('loggedInUser', JSON.stringify(user));
-
-            // Redirect to home_emp.html
+            localStorage.setItem("loggedInUser", JSON.stringify(user));
             window.location.href = "home_emp.html";
         } else {
-            message.textContent = "Email ou mot de passe incorrect !";
+            message.textContent = "Email ou mot de passe incorrect";
             message.className = "error";
         }
     });
 </script>
-```
 
 </body>
 </html>

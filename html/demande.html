@@ -1,326 +1,361 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Demande de Congé</title>
+<meta charset="UTF-8">
+<title>Demande de Congé</title>
 
-    <style>
-        body {
-            margin:0;
-            font-family: Arial, sans-serif;
-            background:#f2f2f2;
-            display: flex;
-        }
+<style>
+    * {
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+    }
 
-        .menu-btn {
-            font-size: 26px;
-            cursor: pointer;
-            margin-right: 20px;
-        }
+    body {
+        margin: 0;
+        background: #f4f6f9;
+        display: flex;
+    }
 
-        .sidebar {
-            width: 250px;
-            background:white;
-            height: 100vh;
-            padding: 20px;
-            box-shadow: 3px 0 8px rgba(0,0,0,0.1);
-            position: fixed;
-            left: 0;
-            top: 0;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s ease;
-        }
+    /* SIDEBAR */
+    .sidebar {
+        width: 260px;
+        background: white;
+        height: 100vh;
+        padding: 25px 20px;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.08);
+        position: fixed;
+        left: 0;
+        top: 0;
+        transition: transform 0.3s ease;
+    }
 
-        .sidebar.hidden {
-            transform: translateX(-260px);
-        }
+    .sidebar.hidden {
+        transform: translateX(-270px);
+    }
 
-        .sidebar h2 {
-            margin:0 0 20px 0;
-            font-size: 22px;
-        }
+    .sidebar h2 {
+        margin-bottom: 30px;
+        color: #2e7d32;
+        font-size: 22px;
+    }
 
-        .sidebar a {
-            text-decoration: none;
-            padding: 12px;
-            margin: 5px 0;
-            background: #f5f5f5;
-            border-radius: 6px;
-            display: block;
-            color: #333;
-            font-weight: bold;
-            transition: 0.2s;
-        }
+    .sidebar a {
+        text-decoration: none;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        background: #f5f5f5;
+        border-radius: 8px;
+        display: block;
+        color: #333;
+        font-weight: 600;
+        transition: 0.25s;
+    }
 
-        .sidebar a:hover {
-            background: #ddd;
-        }
+    .sidebar a:hover {
+        background: #4CAF50;
+        color: white;
+    }
 
-        .main {
-            margin-left: 270px;
-            padding: 30px;
-            width: calc(100% - 270px);
-            transition: margin-left 0.3s ease;
-        }
+    /* MAIN */
+    .main {
+        margin-left: 280px;
+        padding: 30px;
+        width: calc(100% - 280px);
+        transition: margin-left 0.3s ease;
+    }
 
-        .main.expanded {
-            margin-left: 0;
-            width: 100%;
-        }
+    .main.expanded {
+        margin-left: 0;
+        width: 100%;
+    }
 
-        header {
-            display:flex;
-            align-items:center;
-            padding:10px 20px;
-            background:blanchedalmond;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
+    header {
+        display: flex;
+        align-items: center;
+        background: white;
+        padding: 18px 25px;
+        border-radius: 14px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 25px;
+    }
 
-        header img {
-            height:65px;
-            margin-right:15px;
-        }
+    .menu-btn {
+        font-size: 26px;
+        cursor: pointer;
+        margin-right: 20px;
+        user-select: none;
+    }
 
-        /* SOLDE CARD */
-        .solde-card {
-            background:white;
-            padding:20px;
-            border-radius:10px;
-            box-shadow:0 0 15px rgba(0,0,0,0.1);
-            text-align:center;
-            font-size:18px;
-            margin-bottom:20px;
-        }
+    header img {
+        height: 45px;
+        margin-right: 15px;
+    }
 
-        .solde-card h2 {
-            margin:0;
-        }
+    header h1 {
+        margin: 0;
+        font-size: 22px;
+        color: #333;
+    }
 
-        .solde-number {
-            font-size:26px;
-            margin-top:8px;
-            color:#2c3e50;
-            font-weight:bold;
-        }
+    /* SOLDE CARD */
+    .solde-card {
+        background: linear-gradient(135deg, #4CAF50, #2e7d32);
+        color: white;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        text-align: center;
+        margin-bottom: 25px;
+    }
 
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
+    .solde-card h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: normal;
+    }
 
-        h1 {
-            text-align:center;
-            margin-bottom:25px;
-        }
+    .solde-number {
+        font-size: 34px;
+        font-weight: bold;
+        margin-top: 10px;
+    }
 
-        label {
-            font-weight: bold;
-            margin-top: 10px;
-            display: block;
-        }
+    /* FORM CARD */
+    .form-card {
+        background: white;
+        padding: 35px;
+        border-radius: 18px;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+    }
 
-        input, select, textarea {
-            width:100%;
-            padding:10px;
-            margin-top:5px;
-            border:1px solid #ccc;
-            border-radius:5px;
-            font-size:14px;
-        }
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
 
-        textarea {
-            resize: vertical;
-            height: 120px;
-        }
+    .full {
+        grid-column: span 2;
+    }
 
-        button {
-            margin-top:20px;
-            width:100%;
-            padding:12px;
-            background:#007bff;
-            color:white;
-            border:none;
-            border-radius:6px;
-            cursor:pointer;
-            font-size:16px;
-        }
+    label {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 5px;
+        display: block;
+    }
 
-        button:hover {
-            background:#0056b3;
-        }
+    input, select, textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+    }
 
-        .success {
-            margin-top:15px;
-            color:green;
-            font-weight:bold;
-            text-align:center;
-        }
-    </style>
+    input:disabled {
+        background: #f3f3f3;
+        color: #666;
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 110px;
+    }
+
+    .duration {
+        margin-top: 10px;
+        font-weight: bold;
+        color: #2e7d32;
+    }
+
+    button {
+        grid-column: span 2;
+        margin-top: 25px;
+        padding: 14px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        background: #43a047;
+        transform: translateY(-1px);
+    }
+
+    .success {
+        margin-top: 15px;
+        text-align: center;
+        color: #2e7d32;
+        font-weight: bold;
+        display: none;
+    }
+</style>
 </head>
 
 <body>
 
-    <div class="sidebar" id="sidebar">
-        <h2>Navigation</h2>
-        <a href="home_emp.html">Profil</a>
-        <a href="demande.html">Demande congé</a>
-        <a href="historique_emp.html">Historique</a>
-        <a href="notif.html">Notifications</a>
-        
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <h2>Employee Panel</h2>
+    <a href="home_emp.html">Profil</a>
+    <a href="demande.html">Demande congé</a>
+    <a href="historique_emp.html">Historique</a>
+    <a href="notif.html">Notifications</a>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main">
+
+    <header>
+        <span class="menu-btn" id="menuToggle">☰</span>
+        <img src="c:\Users\PC\OneDrive - Ecole Marocaine des Sciences de l'Ingénieur\Documents\GitHub\project-4m\images\business-company-logo-png_seeklogo-388541 (1).png" alt="Logo">
+        <h1>Demande de Congé</h1>
+    </header>
+
+    <div class="solde-card">
+        <h2>Solde de congés</h2>
+        <div class="solde-number" id="soldeDisplay">0 jours</div>
     </div>
 
-    <div class="main" id="main">
+    <div class="form-card">
+        <div class="grid">
 
-        <header>
-            <span class="menu-btn" id="menuToggle">☰</span>
-            <img src="c:\Users\PC\OneDrive - Ecole Marocaine des Sciences de l'Ingénieur\Bureau\prjt 4 subjects\images\corporate-business-logo-png_seeklogo-386910.png">
-            <h1>Demande de Congé</h1>
-        </header>
+            <div>
+                <label>Nom complet</label>
+                <input type="text" id="fullName" disabled>
+            </div>
 
-        <!-- SOLDE DE CONGÉS -->
-        <div class="solde-card">
-            <h2>Solde de Congés</h2>
-            <div class="solde-number" id="soldeDisplay">0 jours</div>
-        </div>
+            <div>
+                <label>CIN</label>
+                <input type="text" id="cin" disabled>
+            </div>
 
-        <div class="container">
+            <div>
+                <label>Département</label>
+                <input type="text" id="departement" disabled>
+            </div>
 
-            <label>Nom complet</label>
-            <input type="text" id="fullName" disabled>
+            <div>
+                <label>Spécialité</label>
+                <input type="text" id="specialite" disabled>
+            </div>
 
-            <label>CIN</label>
-            <input type="text" id="cin" disabled>
+            <div class="full">
+                <label>Type de congé</label>
+                <select id="typeConge">
+                    <option value="">-- Sélectionner --</option>
+                    <option>Congé annuel</option>
+                    <option>Congé maladie</option>
+                    <option>Congé exceptionnel</option>
+                    <option>Congé maternité/paternité</option>
+                    <option>Autre</option>
+                </select>
+            </div>
 
-            <label>Département</label>
-            <input type="text" id="departement" disabled>
+            <div>
+                <label>Date de début</label>
+                <input type="date" id="dateDebut">
+            </div>
 
-            <label>Spécialité</label>
-            <input type="text" id="specialite" disabled>
+            <div>
+                <label>Date de fin</label>
+                <input type="date" id="dateFin">
+            </div>
 
-            <hr style="margin:20px 0">
+            <div class="full duration" id="durationPreview"></div>
 
-            <label>Type de congé</label>
-            <select id="typeConge">
-                <option value="">-- Sélectionner --</option>
-                <option>Congé annuel</option>
-                <option>Congé maladie</option>
-                <option>Congé exceptionnel</option>
-                <option>Congé maternité/paternité</option>
-                <option>Autre</option>
-            </select>
-
-            <label>Date de début</label>
-            <input type="date" id="dateDebut">
-
-            <label>Date de fin</label>
-            <input type="date" id="dateFin">
-
-            <label>Motif / Explication</label>
-            <textarea id="motif" placeholder="Décrivez la raison de votre demande..."></textarea>
+            <div class="full">
+                <label>Motif / Explication</label>
+                <textarea id="motif" placeholder="Décrivez la raison de votre demande..."></textarea>
+            </div>
 
             <button id="sendBtn">Envoyer la demande</button>
+        </div>
 
-            <p class="success" id="successMsg" style="display:none;">
-                Votre demande a été envoyée !
-            </p>
+        <div class="success" id="successMsg">
+            Votre demande a été envoyée avec succès ✔
         </div>
     </div>
+</div>
 
 <script>
-    /* LOAD USER DATA */
-    const user = JSON.parse(localStorage.getItem('loggedInUser'));
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
     if (!user) window.location.href = "login_emp.html";
 
-    document.getElementById("fullName").value = user.nom + " " + user.prenom;
-    document.getElementById("cin").value = user.cin;
-    document.getElementById("departement").value = user.departement;
-    document.getElementById("specialite").value = user.specialite;
+    fullName.value = user.nom + " " + user.prenom;
+    cin.value = user.cin;
+    departement.value = user.departement;
+    specialite.value = user.specialite;
 
-    /* SOLDE SYSTEM */
-    let solde = localStorage.getItem("solde_" + user.cin);
-    if (!solde) {
-        solde = 29;
-        localStorage.setItem("solde_" + user.cin, solde);
+    let solde = Number(localStorage.getItem("solde_" + user.cin)) || 29;
+    localStorage.setItem("solde_" + user.cin, solde);
+    soldeDisplay.textContent = solde + " jours";
+
+    function updateDuration() {
+        if (!dateDebut.value || !dateFin.value) return;
+        const d = (new Date(dateFin.value) - new Date(dateDebut.value)) / 86400000 + 1;
+        durationPreview.textContent = "Durée demandée : " + d + " jours";
     }
-    document.getElementById("soldeDisplay").textContent = solde + " jours";
 
-    /* SEND REQUEST */
-    document.getElementById("sendBtn").addEventListener("click", () => {
-        const dateDebut = document.getElementById("dateDebut").value;
-        const dateFin = document.getElementById("dateFin").value;
+    dateDebut.onchange = updateDuration;
+    dateFin.onchange = updateDuration;
 
-        if (!dateDebut || !dateFin) {
-            alert("Veuillez sélectionner les dates.");
-            return;
-        }
-
-        const debut = new Date(dateDebut);
-        const fin = new Date(dateFin);
-        const today = new Date();
-        today.setHours(0,0,0,0);
-
-        // Check debut >= today
-        if (debut < today) {
-            alert("La date de début ne peut pas être dans le passé.");
-            return;
-        }
-
-        // Check debut <= fin
-        if (fin < debut) {
-            alert("La date de fin doit être supérieure ou égale à la date de début.");
-            return;
-        }
-
-        // Check duration <= 10 jours
-        const diffTime = Math.abs(fin - debut);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-        if (diffDays > 10) {
-            alert("Vous ne pouvez pas prendre plus de 10 jours de congé d'affilée.");
-            return;
-        }
-
-        const demande = {
-            fullName: user.nom + " " + user.prenom,
-            cin: user.cin,
-            departement: user.departement,
-            specialite: user.specialite,
-            typeConge: document.getElementById("typeConge").value,
-            dateDebut: dateDebut,
-            dateFin: dateFin,
-            motif: document.getElementById("motif").value,
-            statut: "en attente",
-            dateEnvoi: new Date().toLocaleString()
-        };
-
-        if (!demande.typeConge || !demande.motif) {
+    sendBtn.onclick = () => {
+        if (!typeConge.value || !dateDebut.value || !dateFin.value || !motif.value) {
             alert("Veuillez remplir tous les champs.");
             return;
         }
 
-        let demandes = JSON.parse(localStorage.getItem("demandesConge")) || [];
-        demandes.push(demande);
+        const debut = new Date(dateDebut.value);
+        const fin = new Date(dateFin.value);
+        const diffDays = (fin - debut) / 86400000 + 1;
+
+        if (diffDays > 10) {
+            alert("Maximum 10 jours de congé.");
+            return;
+        }
+
+        if (diffDays > solde) {
+            alert("Solde insuffisant.");
+            return;
+        }
+
+        const demandes = JSON.parse(localStorage.getItem("demandesConge")) || [];
+
+        demandes.push({
+            cin: user.cin,
+            fullName: user.nom + " " + user.prenom,
+            departement: user.departement,
+            specialite: user.specialite,
+            typeConge: typeConge.value,
+            dateDebut: dateDebut.value,
+            dateFin: dateFin.value,
+            motif: motif.value,
+            statut: "pending",
+            dateEnvoi: new Date().toLocaleString()
+        });
+
         localStorage.setItem("demandesConge", JSON.stringify(demandes));
 
-        document.getElementById("successMsg").style.display = "block";
+        solde -= diffDays;
+        localStorage.setItem("solde_" + user.cin, solde);
+        soldeDisplay.textContent = solde + " jours";
 
-        document.getElementById("typeConge").value = "";
-        document.getElementById("dateDebut").value = "";
-        document.getElementById("dateFin").value = "";
-        document.getElementById("motif").value = "";
-    });
+        successMsg.style.display = "block";
+        typeConge.value = dateDebut.value = dateFin.value = motif.value = "";
+        durationPreview.textContent = "";
+    };
 
-    /* TOGGLE SIDEBAR */
-    const sidebar = document.getElementById("sidebar");
-    const main = document.getElementById("main");
-    const toggle = document.getElementById("menuToggle");
-    toggle.addEventListener("click", () => {
+    menuToggle.onclick = () => {
         sidebar.classList.toggle("hidden");
         main.classList.toggle("expanded");
-    });
+    };
 </script>
 
 </body>
