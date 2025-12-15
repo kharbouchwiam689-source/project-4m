@@ -336,16 +336,14 @@
             dateDebut: dateDebut.value,
             dateFin: dateFin.value,
             motif: motif.value,
-            statut: "pending",
+            statut: "pending",  // Set the status as 'pending'
             dateEnvoi: new Date().toLocaleString()
         });
 
         localStorage.setItem("demandesConge", JSON.stringify(demandes));
 
-        solde -= diffDays;
-        localStorage.setItem("solde_" + user.cin, solde);
-        soldeDisplay.textContent = solde + " jours";
-
+        // Solde should only decrease when the request is approved (this will be handled by admin later)
+        // If status is still pending, don't decrease the solde yet
         successMsg.style.display = "block";
         typeConge.value = dateDebut.value = dateFin.value = motif.value = "";
         durationPreview.textContent = "";
@@ -356,6 +354,7 @@
         main.classList.toggle("expanded");
     };
 </script>
+
 
 </body>
 </html>
